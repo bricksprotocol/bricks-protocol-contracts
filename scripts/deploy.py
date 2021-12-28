@@ -29,6 +29,10 @@ def createTournament():
     tournament.wait(1)
     print(f"the tournamnet is hosted at {tournament}")
     print(tournament.events["tournamentCreated"]["tournamentAddress"])
+    # join_tournament(tournament)
+
+
+def join_tournament(tournament):
     contract = Contract.from_abi(
         CreateTournament._name,
         tournament.events["tournamentCreated"]["tournamentAddress"],

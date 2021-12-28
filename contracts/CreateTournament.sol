@@ -3,6 +3,8 @@
 pragma solidity >=0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IWETHGateway.sol";
+import "../interfaces/ILendingPoolAddressesProvider.sol";
 
 contract CreateTournament is Ownable {
     string public tournamentURI;
@@ -34,7 +36,13 @@ contract CreateTournament is Ownable {
         tournamentStart = _tournamentStart;
         tournamentEnd = _tournamentEnd;
         tournamentEntryFees = _tournamentEntryFees;
-        transferOwnership(_sender);
+        // transferOwnership(_sender);
+        address lendingPool = ILendingPoolAddressesProvider(
+            0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5
+        ).getLendingPool();
+        IWETHGateway(0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04).depositETH{
+            value: msg.value
+        }(lendingPool, msg.sender, 0);
         initialVestedAmount = msg.value;
     }
 
