@@ -3,6 +3,7 @@
 pragma solidity >=0.6.0;
 
 import "./CreateTournament.sol";
+import "../interfaces/IERC20.sol";
 
 contract CreateTournamentFactory {
     CreateTournament[] public tournamentsArray;
@@ -13,16 +14,20 @@ contract CreateTournamentFactory {
         string memory _tournamentURI,
         uint256 _tournamentStart,
         uint256 _tournamentEnd,
-        uint256 _tournamentEntryFees
-    ) public payable {
-        CreateTournament createTournament = (new CreateTournament){
-            value: msg.value
-        }({
+        uint256 _tournamentEntryFees,
+        address _lending_pool_address,
+        address _asset,
+        uint256 _initial_invested_amount
+    ) public {
+        CreateTournament createTournament = (new CreateTournament)({
             _tournamentURI: _tournamentURI,
             _tournamentStart: _tournamentStart,
             _tournamentEnd: _tournamentEnd,
             _tournamentEntryFees: _tournamentEntryFees,
-            _sender: payable(msg.sender)
+            _lending_pool_address: _lending_pool_address,
+            _asset: _asset,
+            _initial_invested_amount: _initial_invested_amount,
+            _sender: msg.sender
         });
         tournamentsArray.push(createTournament);
         tournamentsMapping[address(createTournament)] = true;
