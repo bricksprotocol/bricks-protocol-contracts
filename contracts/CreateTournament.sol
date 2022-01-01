@@ -47,8 +47,9 @@ contract CreateTournament is Ownable {
         asset = _asset;
         lending_pool_address = _lending_pool_address;
         if (_initial_invested_amount != 0) {
+            // IERC20(asset).approve(address(this), _initial_invested_amount);
             // IERC20(asset).transferFrom(
-            //     creator,
+            //     msg.sender,
             //     address(this),
             //     _initial_invested_amount
             // );
@@ -56,12 +57,12 @@ contract CreateTournament is Ownable {
             //     lending_pool_address,
             //     _initial_invested_amount
             // );
-            ILendingPool(lending_pool_address).deposit(
-                asset,
-                _initial_invested_amount,
-                address(this),
-                0
-            );
+            // ILendingPool(lending_pool_address).deposit(
+            //     asset,
+            //     _initial_invested_amount,
+            //     address(this),
+            //     0
+            // );
         }
         // if (msg.value != 0) {
         //     address lendingPool = ILendingPoolAddressesProvider(

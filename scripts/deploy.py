@@ -64,9 +64,9 @@ def createTournament():
     # get_weth(INITIAL_INVESTED_AMOUNT, account)
 
     if len(CreateTournamentFactory) == 0:
-        factory_contract = deploy_factory_contract()
-    else:
-        factory_contract = CreateTournamentFactory[-1]
+        deploy_factory_contract()
+
+    factory_contract = CreateTournamentFactory[-1]
 
     approve_erc20(
         INITIAL_INVESTED_AMOUNT, factory_contract.address, weth_token_address, account
@@ -84,7 +84,7 @@ def createTournament():
         1650012433,
         1651012433,
         ENTRY_FEES,
-        getLendingPoolAddress(),
+        lending_pool_address,
         weth_token_address,
         INITIAL_INVESTED_AMOUNT,
         {"from": account},
@@ -139,6 +139,7 @@ def deploy_factory_contract():
     account = get_account()
     createTournamentFactory = CreateTournamentFactory.deploy({"from": account})
     print(f"Factory Contract Deployed to {createTournamentFactory}")
+    # createTournamentFactory.wait(1)
     return createTournamentFactory
 
 

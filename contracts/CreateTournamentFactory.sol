@@ -4,11 +4,13 @@ pragma solidity >=0.6.0;
 
 import "./CreateTournament.sol";
 import "../interfaces/IERC20.sol";
+import "../interfaces/ILendingPool.sol";
 
 contract CreateTournamentFactory {
     CreateTournament[] public tournamentsArray;
     mapping(address => bool) tournamentsMapping;
     event tournamentCreated(address tournamentAddress);
+    IERC20 ierc20;
 
     function createTournamentContract(
         string memory _tournamentURI,
@@ -19,6 +21,8 @@ contract CreateTournamentFactory {
         address _asset,
         uint256 _initial_invested_amount
     ) public {
+        ierc20 = IERC20(_asset);
+
         CreateTournament createTournament = (new CreateTournament)({
             _tournamentURI: _tournamentURI,
             _tournamentStart: _tournamentStart,
@@ -29,6 +33,30 @@ contract CreateTournamentFactory {
             _initial_invested_amount: _initial_invested_amount,
             _sender: msg.sender
         });
+        if (_initial_invested_amount != 0) {
+            ierc20.transferFrom(
+                msg.sender,
+                address(this),
+                _initial_invested_amount
+            );
+            ierc20.approve(_lending_pool_address, _initial_invested_amount);
+            // IERC20(asset).approve(address(this), _initial_invested_amount);
+            // IERC20(asset).transferFrom(
+            //     msg.sender,
+            //     address(this),
+            //     _initial_invested_amount
+            // );
+            // IERC20(asset).approve(
+            //     lending_pool_address,
+            //     _initial_invested_amount
+            // );
+            ILendingPool(_lending_pool_address).deposit(
+                _asset,
+                _initial_invested_amount,
+                address(createTournament),
+                0
+            );
+        }
         tournamentsArray.push(createTournament);
         tournamentsMapping[address(createTournament)] = true;
         emit tournamentCreated(address(createTournament));
