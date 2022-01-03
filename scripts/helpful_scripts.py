@@ -1,7 +1,12 @@
 from brownie import config, network, accounts, Contract, CreateTournament
 
-LOCAL_BLOCKCHAIN_ENV = ["development", "ganache-local", "mainnet-fork"]
-FORKED_LOCAL_ENV = ["mainnet-fork", "mainnet-fork-dev"]
+LOCAL_BLOCKCHAIN_ENV = [
+    "development",
+    "ganache-local",
+    "mainnet-fork",
+    "polygon-mainnet-fork",
+]
+FORKED_LOCAL_ENV = ["mainnet-fork", "mainnet-fork-dev", "polygon-mainnet-fork"]
 
 
 def get_account(index=None, id=None):

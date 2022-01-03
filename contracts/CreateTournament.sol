@@ -16,12 +16,12 @@ contract CreateTournament is Ownable {
     address payable[] public participants;
     mapping(address => bool) public participantFees;
     address public creator;
-    address asset;
-    address lending_pool_address;
+    address internal asset;
+    address internal lending_pool_address;
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
     // {"name": "tournament_name", "description" : "tournament_description", "trading_assets": [], "image": "image_url"}
-    constructor(
+    function createPool(
         string memory _tournamentURI,
         uint256 _tournamentStart,
         uint256 _tournamentEnd,
@@ -30,7 +30,7 @@ contract CreateTournament is Ownable {
         address _asset,
         uint256 _initial_invested_amount,
         address _sender
-    ) {
+    ) public {
         require(
             _tournamentStart >= block.timestamp,
             "Start time has already passed!"
@@ -46,35 +46,6 @@ contract CreateTournament is Ownable {
         creator = _sender;
         asset = _asset;
         lending_pool_address = _lending_pool_address;
-        if (_initial_invested_amount != 0) {
-            // IERC20(asset).approve(address(this), _initial_invested_amount);
-            // IERC20(asset).transferFrom(
-            //     msg.sender,
-            //     address(this),
-            //     _initial_invested_amount
-            // );
-            // IERC20(asset).approve(
-            //     lending_pool_address,
-            //     _initial_invested_amount
-            // );
-            // ILendingPool(lending_pool_address).deposit(
-            //     asset,
-            //     _initial_invested_amount,
-            //     address(this),
-            //     0
-            // );
-        }
-        // if (msg.value != 0) {
-        //     address lendingPool = ILendingPoolAddressesProvider(
-        //         0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5
-        //     ).getLendingPool();
-        //     ILendingPool(lendingPool).deposit(
-        //         asset,
-        //         msg.value,
-        //         address(this),
-        //         0
-        //     );
-        // }
         initialVestedAmount = _initial_invested_amount;
     }
 
@@ -109,35 +80,45 @@ contract CreateTournament is Ownable {
         );
     }
 
-    function joinTournament() public payable {
+    function joinTournament() public {
         // check if the values match
+        IERC20 ierc20 = IERC20(asset);
+        uint256 balance = ierc20.balanceOf(msg.sender);
         require(
-            msg.value == tournamentEntryFees,
-            "Fees and value do not match"
+            balance >= tournamentEntryFees,
+            "You do not have enough to join this Event"
         );
         // check if the participant is already registered the event
         require(
             participantFees[msg.sender] != true,
             "The participant is already registered"
         );
-        // if (msg.value != 0) {
-        //     address lendingPool = ILendingPoolAddressesProvider(
-        //         0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5
-        //     ).getLendingPool();
-        //     IWETHGateway(0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04).depositETH{
-        //         value: msg.value
-        //     }(lendingPool, address(this), 0);
-        // }
-        if (msg.value != 0) {
+
+        if (tournamentEntryFees != 0) {
+            require(
+                ierc20.transferFrom(
+                    msg.sender,
+                    address(this),
+                    tournamentEntryFees
+                )
+            );
+            ierc20.approve(lending_pool_address, tournamentEntryFees);
             ILendingPool(lending_pool_address).deposit(
                 asset,
-                msg.value,
+                tournamentEntryFees,
                 address(this),
                 0
             );
         }
         participantFees[msg.sender] = true;
         participants.push(payable(msg.sender));
+    }
+
+    // dummy funtion to withdraw funds, not to be used for production
+    function withdrawFunds(address _address, address _aave_asset) public {
+        IERC20 ierc20 = IERC20(_aave_asset);
+        uint256 balance = ierc20.balanceOf(address(this));
+        ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
     }
 
     function getParticipants() public view returns (address payable[] memory) {

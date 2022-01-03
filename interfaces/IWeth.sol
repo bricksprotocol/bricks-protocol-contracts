@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.4.19;
+pragma solidity >=0.4.19;
 
 interface IWeth {
     function allowance(address owner, address spender)

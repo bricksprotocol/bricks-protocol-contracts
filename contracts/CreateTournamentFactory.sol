@@ -12,7 +12,7 @@ contract CreateTournamentFactory {
     event tournamentCreated(address tournamentAddress);
     IERC20 ierc20;
 
-    function createTournamentContract(
+    function createTournamentPool(
         string memory _tournamentURI,
         uint256 _tournamentStart,
         uint256 _tournamentEnd,
@@ -22,8 +22,8 @@ contract CreateTournamentFactory {
         uint256 _initial_invested_amount
     ) public {
         ierc20 = IERC20(_asset);
-
-        CreateTournament createTournament = (new CreateTournament)({
+        CreateTournament createTournament = new CreateTournament();
+        createTournament.createPool({
             _tournamentURI: _tournamentURI,
             _tournamentStart: _tournamentStart,
             _tournamentEnd: _tournamentEnd,
@@ -34,22 +34,14 @@ contract CreateTournamentFactory {
             _sender: msg.sender
         });
         if (_initial_invested_amount != 0) {
-            ierc20.transferFrom(
-                msg.sender,
-                address(this),
-                _initial_invested_amount
+            require(
+                ierc20.transferFrom(
+                    msg.sender,
+                    address(this),
+                    _initial_invested_amount
+                )
             );
             ierc20.approve(_lending_pool_address, _initial_invested_amount);
-            // IERC20(asset).approve(address(this), _initial_invested_amount);
-            // IERC20(asset).transferFrom(
-            //     msg.sender,
-            //     address(this),
-            //     _initial_invested_amount
-            // );
-            // IERC20(asset).approve(
-            //     lending_pool_address,
-            //     _initial_invested_amount
-            // );
             ILendingPool(_lending_pool_address).deposit(
                 _asset,
                 _initial_invested_amount,

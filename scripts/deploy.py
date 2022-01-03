@@ -61,7 +61,7 @@ def createTournament():
     lending_pool_address = getLendingPoolAddress()
     weth_token_address = config["networks"][network.show_active()]["weth_token"]
 
-    # get_weth(INITIAL_INVESTED_AMOUNT, account)
+    get_weth(INITIAL_INVESTED_AMOUNT, account)
 
     if len(CreateTournamentFactory) == 0:
         deploy_factory_contract()
@@ -71,15 +71,8 @@ def createTournament():
     approve_erc20(
         INITIAL_INVESTED_AMOUNT, factory_contract.address, weth_token_address, account
     )
-    # tx = interface.ILendingPool(lending_pool_address).deposit(
-    #     weth_token_address,
-    #     INITIAL_INVESTED_AMOUNT,
-    #     account.address,
-    #     0,
-    #     {"from": account},
-    # )
-    # print(f"transaction hash is {tx}")
-    tournament = factory_contract.createTournamentContract(
+
+    tournament = factory_contract.createTournamentPool(
         "URI_STRING",
         1650012433,
         1651012433,
@@ -96,40 +89,64 @@ def createTournament():
         tournament.events["tournamentCreated"]["tournamentAddress"],
         CreateTournament.abi,
     )
-    getBalanceOfContract(tournament_contract)
-    # join_tournament(tournament_contract)
-    # getBalanceOfContract(tournament_contract)
+    getBalanceOfAddress(tournament_contract.address, "aweth_token_address")
+    join_tournament(tournament_contract)
+    getBalanceOfAddress(tournament_contract.address, "aweth_token_address")
+    withdraw_funds(tournament_contract)
+    getBalanceOfAddress(tournament_contract.address, "aweth_token_address")
+
+
+# A dummy function not to be used in production
+def withdraw_funds(tournament_contract):
+    balance = getBalanceOfAddress(get_account(), "weth_token")
+    print(f"the weth in the withdrawal account before are {balance}")
+    withdraw = tournament_contract.withdrawFunds(
+        get_account(),
+        config["networks"][network.show_active()]["aweth_token_address"],
+        {"from": get_account()},
+    )
+    withdraw.wait(1)
+    balance = getBalanceOfAddress(get_account(), "weth_token")
+    print(f"the weth in the withdrawal account are {balance}")
 
 
 # This function gets the balance of WETH token placed in the CreateTournament contract created by the user
-def getBalanceOfContract(tournament_contract):
+def getBalanceOfAddress(tournament_contract_address, token_string):
     aweth_contract = interface.IERC20(
-        config["networks"][network.show_active()]["aweth_token_address"]
+        config["networks"][network.show_active()][token_string]
     )
-    balance_of_contract = aweth_contract.balanceOf(tournament_contract.address)
-    print(f"aWeth balance of contract is {balance_of_contract}")
+    balance_of_address = aweth_contract.balanceOf(tournament_contract_address)
+    print(f"aWeth balance of contract is {balance_of_address}")
+    return balance_of_address
 
 
 # This Function is used to mimic three accounts joining, basically testing the joining of participants in the event
 def join_tournament(tournament_contract):
     new_account = accounts[1]
+    get_weth(ENTRY_FEES, new_account)
     print(f"new account 1 : {new_account}")
     print(new_account.balance())
-    join = tournament_contract.joinTournament(
-        {"from": new_account, "value": ENTRY_FEES}
+    weth_token_address = config["networks"][network.show_active()]["weth_token"]
+    approve_erc20(
+        ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
     )
+    join = tournament_contract.joinTournament({"from": new_account})
     join.wait(1)
     new_account = accounts[2]
+    get_weth(ENTRY_FEES, new_account)
     print(f"new account 2 : {new_account}")
-    join = tournament_contract.joinTournament(
-        {"from": new_account, "value": ENTRY_FEES}
+    approve_erc20(
+        ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
     )
+    join = tournament_contract.joinTournament({"from": new_account})
     join.wait(1)
     new_account = accounts[3]
+    get_weth(ENTRY_FEES, new_account)
     print(f"new account 3 : {new_account}")
-    join = tournament_contract.joinTournament(
-        {"from": new_account, "value": ENTRY_FEES}
+    approve_erc20(
+        ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
     )
+    join = tournament_contract.joinTournament({"from": new_account})
     join.wait(1)
     number_of_participants = tournament_contract.getParticipants()
     print(f"number of participants {number_of_participants}")
