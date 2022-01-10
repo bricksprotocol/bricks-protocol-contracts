@@ -16,7 +16,7 @@ contract CreateTournament is Ownable {
     address payable[] public participants;
     mapping(address => bool) public participantFees;
     address public creator;
-    address internal asset;
+    address public asset;
     address internal lending_pool_address;
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
@@ -66,6 +66,7 @@ contract CreateTournament is Ownable {
             uint256,
             uint256,
             uint256,
+            address,
             address payable[] memory
         )
     {
@@ -76,6 +77,7 @@ contract CreateTournament is Ownable {
             tournamentEnd,
             tournamentEntryFees,
             initialVestedAmount,
+            asset,
             getParticipants()
         );
     }

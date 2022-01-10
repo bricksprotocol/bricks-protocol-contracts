@@ -64,6 +64,7 @@ contract CreateTournamentFactory {
             uint256,
             uint256,
             uint256,
+            address,
             address payable[] memory
         )
     {
@@ -80,6 +81,7 @@ contract CreateTournamentFactory {
             uint256,
             uint256,
             uint256,
+            address,
             address payable[] memory
         )
     {
