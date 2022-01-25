@@ -9,12 +9,12 @@ from brownie import (
     Contract,
     interface,
 )
-from scripts.helpful_scripts import get_account
+from scripts.helpful_scripts import get_account, LOCAL_BLOCKCHAIN_ENV
 from scripts.get_weth import get_weth
 from web3 import Web3
 
 ENTRY_FEES = Web3.toWei(0.0001, "ether")
-INITIAL_INVESTED_AMOUNT = Web3.toWei(0.001, "ether")
+INITIAL_INVESTED_AMOUNT = Web3.toWei(0.0001, "ether")
 
 # get the latest lending pool contract based on the network
 def getLendingPoolAddress():
@@ -68,9 +68,13 @@ def createTournament():
 
     factory_contract = CreateTournamentFactory[-1]
 
+    print(f"factory address is {factory_contract.address}")
+
     approve_erc20(
         INITIAL_INVESTED_AMOUNT, factory_contract.address, weth_token_address, account
     )
+
+    # "URI_STRING",1650012433,1651012433,1000000000000000,"0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe","0xd0a1e359811322d97991e03f863a0c30c2cf029c",1000000000000000
 
     tournament = factory_contract.createTournamentPool(
         "URI_STRING",
@@ -83,7 +87,10 @@ def createTournament():
         {"from": account},
     )
     tournament.wait(1)
-    print(f"Tournament created {tournament}")
+    tournament_address_print = tournament.events["tournamentCreated"][
+        "tournamentAddress"
+    ]
+    print(f"Tournament created {tournament_address_print}")
     tournament_contract = Contract.from_abi(
         CreateTournament._name,
         tournament.events["tournamentCreated"]["tournamentAddress"],
@@ -122,34 +129,47 @@ def getBalanceOfAddress(tournament_contract_address, token_string):
 
 # This Function is used to mimic three accounts joining, basically testing the joining of participants in the event
 def join_tournament(tournament_contract):
-    new_account = accounts[1]
-    get_weth(ENTRY_FEES, new_account)
-    print(f"new account 1 : {new_account}")
-    print(new_account.balance())
-    weth_token_address = config["networks"][network.show_active()]["weth_token"]
-    approve_erc20(
-        ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
-    )
-    join = tournament_contract.joinTournament({"from": new_account})
-    join.wait(1)
-    new_account = accounts[2]
-    get_weth(ENTRY_FEES, new_account)
-    print(f"new account 2 : {new_account}")
-    approve_erc20(
-        ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
-    )
-    join = tournament_contract.joinTournament({"from": new_account})
-    join.wait(1)
-    new_account = accounts[3]
-    get_weth(ENTRY_FEES, new_account)
-    print(f"new account 3 : {new_account}")
-    approve_erc20(
-        ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
-    )
-    join = tournament_contract.joinTournament({"from": new_account})
-    join.wait(1)
-    number_of_participants = tournament_contract.getParticipants()
-    print(f"number of participants {number_of_participants}")
+    if config["networks"][network.show_active()] in LOCAL_BLOCKCHAIN_ENV:
+        new_account = accounts[1]
+        get_weth(ENTRY_FEES, new_account)
+        print(f"new account 1 : {new_account}")
+        print(new_account.balance())
+        weth_token_address = config["networks"][network.show_active()]["weth_token"]
+        approve_erc20(
+            ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
+        )
+        join = tournament_contract.joinTournament({"from": new_account})
+        join.wait(1)
+        new_account = accounts[2]
+        get_weth(ENTRY_FEES, new_account)
+        print(f"new account 2 : {new_account}")
+        approve_erc20(
+            ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
+        )
+        join = tournament_contract.joinTournament({"from": new_account})
+        join.wait(1)
+        new_account = accounts[3]
+        get_weth(ENTRY_FEES, new_account)
+        print(f"new account 3 : {new_account}")
+        approve_erc20(
+            ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
+        )
+        join = tournament_contract.joinTournament({"from": new_account})
+        join.wait(1)
+        number_of_participants = tournament_contract.getParticipants()
+        print(f"number of participants {number_of_participants}")
+
+    else:
+        new_account = get_account()
+        get_weth(ENTRY_FEES, new_account)
+        print(f"new account 1 : {new_account}")
+        print(new_account.balance())
+        weth_token_address = config["networks"][network.show_active()]["weth_token"]
+        approve_erc20(
+            ENTRY_FEES, tournament_contract.address, weth_token_address, new_account
+        )
+        join = tournament_contract.joinTournament({"from": new_account})
+        join.wait(1)
 
 
 def deploy_factory_contract():

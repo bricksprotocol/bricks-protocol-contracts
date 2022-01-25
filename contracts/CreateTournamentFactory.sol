@@ -11,6 +11,8 @@ contract CreateTournamentFactory {
     mapping(address => bool) tournamentsMapping;
     event tournamentCreated(address tournamentAddress);
     IERC20 ierc20;
+    address linkTokenAddress = 0xa36085F69e2889c224210F603D836748e7dC0088;
+    uint256 linkFundValue = 0.1 * 10**18;
 
     function createTournamentPool(
         string memory _tournamentURI,
@@ -51,6 +53,13 @@ contract CreateTournamentFactory {
         }
         tournamentsArray.push(createTournament);
         tournamentsMapping[address(createTournament)] = true;
+        IERC20 linkTokenContract = IERC20(linkTokenAddress);
+        linkTokenContract.approve(address(this), linkFundValue);
+        linkTokenContract.transferFrom(
+            address(this),
+            address(createTournament),
+            linkFundValue
+        );
         emit tournamentCreated(address(createTournament));
     }
 

@@ -3,11 +3,17 @@
 pragma solidity >=0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 // import "../interfaces/IWETHGateway.sol";
 import "../interfaces/ILendingPool.sol";
 import "../interfaces/IERC20.sol";
 
-contract CreateTournament is Ownable {
+contract CreateTournament is Ownable, ChainlinkClient {
+    event ParticipantJoined(address indexed participant, uint256 entryFees);
+    event withdraw(address indexed participant, uint256 amount);
+
+    using Chainlink for Chainlink.Request;
+
     string public tournamentURI;
     uint256 public tournamentStart;
     uint256 public tournamentEnd;
@@ -18,6 +24,23 @@ contract CreateTournament is Ownable {
     address public creator;
     address public asset;
     address internal lending_pool_address;
+    mapping(bytes32 => address) requestMapping;
+    address public aave_asset_address;
+
+    address private oracle;
+    bytes32 private jobId;
+    uint256 private fee;
+
+    // custom variables for testing only
+    uint256 public fraction;
+
+    // initializing oracle, jobid and fee for the required network
+    constructor() {
+        setPublicChainlinkToken();
+        oracle = 0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8;
+        jobId = "d5270d1c311941d0b08bead21fea7747";
+        fee = 0.1 * 10**18; // (Varies by network and job)
+    }
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
     // {"name": "tournament_name", "description" : "tournament_description", "trading_assets": [], "image": "image_url"}
@@ -71,7 +94,7 @@ contract CreateTournament is Ownable {
         )
     {
         return (
-            owner(),
+            getCreator(),
             tournamentURI,
             tournamentStart,
             tournamentEnd,
@@ -114,13 +137,21 @@ contract CreateTournament is Ownable {
         }
         participantFees[msg.sender] = true;
         participants.push(payable(msg.sender));
+        emit ParticipantJoined(msg.sender, tournamentEntryFees);
     }
 
     // dummy funtion to withdraw funds, not to be used for production
     function withdrawFunds(address _address, address _aave_asset) public {
-        IERC20 ierc20 = IERC20(_aave_asset);
-        uint256 balance = ierc20.balanceOf(address(this));
-        ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
+        // IERC20 ierc20 = IERC20(_aave_asset);
+        // uint256 balance = ierc20.balanceOf(address(this));
+        // ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
+        // todo : check if the withdrawer is either creator or participant
+        // todo : check if the event has ended
+        // todo : check if creator is zero
+        // todo: check if entry fees is zero
+        // todo: check if creator has participated
+        aave_asset_address = _aave_asset;
+        requestData();
     }
 
     function getParticipants() public view returns (address payable[] memory) {
@@ -129,5 +160,97 @@ contract CreateTournament is Ownable {
 
     function getCreator() public view returns (address) {
         return creator;
+    }
+
+    function requestData() internal returns (bytes32 requestId) {
+        Chainlink.Request memory request = buildChainlinkRequest(
+            jobId,
+            address(this),
+            this.fulfill.selector
+        );
+
+        // Set the URL to perform the GET request on
+        request.add(
+            "get",
+            string(
+                abi.encodePacked(
+                    "https://testapi.bricksprotocol.com/api/v1/contracts/fraction?user_address=",
+                    toAsciiString(msg.sender),
+                    "&event_address=",
+                    toAsciiString(address(this))
+                )
+            )
+        );
+
+        // Set the path to find the desired data in the API response, where the response format is:
+        // {"RAW":
+        //   {"ETH":
+        //    {"USD":
+        //     {
+        //      "VOLUME24HOUR": xxx.xxx,
+        //     }
+        //    }
+        //   }
+        //  }
+        request.add("path", "fractional_split");
+
+        // Multiply the result by 1000000000000000000 to remove decimals
+        int256 timesAmount = 10**8;
+        request.addInt("times", timesAmount);
+
+        // Sends the request
+        bytes32 requestID = sendChainlinkRequestTo(oracle, request, fee);
+        requestMapping[requestID] = msg.sender;
+    }
+
+    /**
+     * Receive the response in the form of uint256
+     */
+    function fulfill(bytes32 _requestId, uint256 _fraction)
+        public
+        recordChainlinkFulfillment(_requestId)
+    {
+        address sender = requestMapping[_requestId];
+        IERC20 ierc20 = IERC20(aave_asset_address);
+        uint256 balance = ierc20.balanceOf(address(this));
+        uint256 poolinterest = balance -
+            initialVestedAmount -
+            participants.length *
+            tournamentEntryFees;
+        uint256 withdrawAmount = (poolinterest * _fraction) /
+            uint256(10**8) +
+            tournamentEntryFees;
+        // uint256 withdrawAmount = poolinterest * (_fraction / uint256(10**8));
+        // ILendingPool(lending_pool_address).withdraw(
+        //     aave_asset_address,
+        //     withdrawAmount,
+        //     sender
+        // );
+        // emit withdraw(sender, withdrawAmount);
+        fraction = withdrawAmount;
+    }
+
+    // functions that could be in a library
+    function toAsciiString(address x) internal pure returns (string memory) {
+        bytes memory s = new bytes(40);
+        for (uint256 i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint256(uint160(x)) / (2**(8 * (19 - i)))));
+            bytes1 hi = bytes1(uint8(b) / 16);
+            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+            s[2 * i] = char(hi);
+            s[2 * i + 1] = char(lo);
+        }
+        return string(s);
+    }
+
+    function char(bytes1 b) internal pure returns (bytes1 c) {
+        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+        else return bytes1(uint8(b) + 0x57);
+    }
+
+    // custom functions for testing
+
+    function getFraction() public view returns (uint256) {
+        return fraction;
     }
 }

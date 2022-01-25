@@ -43,6 +43,6 @@ def withdraw_funds(tournament_address, address_to_withdraw):
 
 
 def main():
-    tournament_address = ""
+    tournament_address = "0x38552C89a25e9a0b51BC3DAAa4a0D93DF1cf8F10"
     address_to_withdraw = ""
-    withdraw_funds(tournament_address, address_to_withdraw)
+    withdraw_funds(tournament_address, get_account())

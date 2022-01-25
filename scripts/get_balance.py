@@ -9,8 +9,8 @@ from brownie import (
 
 
 def get_balance():
-    tournament_contract_address = "0x92f4c3F968DD8A6CeBb07A581718811733534503"
-    aweth_contract = interface.IERC20("0xFF3c8bc103682FA918c954E84F5056aB4DD5189d")
+    tournament_contract_address = "0x4a2DF83ea349753D1DA773d2e2223F1C1Bf5d89E"
+    aweth_contract = interface.IERC20("0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347")
     balance_of_contract = aweth_contract.balanceOf(tournament_contract_address)
     print(f"aWeth balance of contract is {balance_of_contract}")
 

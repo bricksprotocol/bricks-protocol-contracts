@@ -1,15 +1,5 @@
-from brownie import CreateTournamentFactory, config, network, interface
 from scripts.helpful_scripts import get_account
-
-
-def deploy_factory_contract():
-    account = get_account()
-    createTournamentFactory = CreateTournamentFactory.deploy(
-        {"from": account}, publish_source=True
-    )
-    print(f"Factory Contract Deployed to {createTournamentFactory}")
-    # createTournamentFactory.wait(1)
-    return createTournamentFactory
+from brownie import config, network, interface
 
 
 def fund_with_link(
@@ -30,5 +20,4 @@ def fund_with_link(
 
 
 def main():
-    contract = deploy_factory_contract()
-    fund_with_link(contract_address=contract)
+    fund_with_link(contract_address="0xdA8c99fc563B2b1181D1690771670bA488415Fe7")
