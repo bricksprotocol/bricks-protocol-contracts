@@ -2,35 +2,114 @@
 
 pragma solidity >=0.6.0;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CreateTournament.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/ILendingPool.sol";
+import "../interfaces/ILendingPoolAddressesProvider.sol";
 
-contract CreateTournamentFactory {
+contract CreateTournamentFactory is Ownable {
     CreateTournament[] public tournamentsArray;
     mapping(address => bool) tournamentsMapping;
     event tournamentCreated(address tournamentAddress);
     IERC20 ierc20;
-    address linkTokenAddress = 0xa36085F69e2889c224210F603D836748e7dC0088;
-    uint256 linkFundValue = 0.1 * 10**18;
+
+    address lendingPoolAddressProvider;
+    address lendingPoolAddress;
+    address dataProvider;
+    address linkTokenAddress;
+    uint256 linkFundValue;
+
+    address private oracle;
+    bytes32 private jobId;
+    uint256 private fee;
+
+    function setMinimumLinkfunder(uint256 _value) public onlyOwner {
+        linkFundValue = _value;
+    }
+
+    function getMinimumLinkFunder() public view returns (uint256) {
+        return linkFundValue;
+    }
+
+    function setLendingPoolAddressProvider(address _lendingPoolAddressProvider)
+        public
+        onlyOwner
+    {
+        lendingPoolAddressProvider = _lendingPoolAddressProvider;
+        lendingPoolAddress = ILendingPoolAddressesProvider(
+            _lendingPoolAddressProvider
+        ).getLendingPool();
+        dataProvider = ILendingPoolAddressesProvider(
+            _lendingPoolAddressProvider
+        ).getAddress(
+                0x0100000000000000000000000000000000000000000000000000000000000000
+            );
+    }
+
+    function getLendingPoolAddressProvider()
+        public
+        view
+        returns (
+            address,
+            address,
+            address
+        )
+    {
+        return (lendingPoolAddressProvider, lendingPoolAddress, dataProvider);
+    }
+
+    function setOracleData(
+        address _oracle,
+        bytes32 _jobId,
+        uint256 _fee
+    ) public onlyOwner {
+        oracle = _oracle;
+        jobId = _jobId;
+        fee = _fee;
+    }
+
+    function getOracleData()
+        public
+        view
+        returns (
+            address,
+            bytes32,
+            uint256
+        )
+    {
+        return (oracle, jobId, fee);
+    }
+
+    function setLinkTokenAddress(address _link) public onlyOwner {
+        linkTokenAddress = _link;
+    }
+
+    function getLinkTokenAddress() public view returns (address) {
+        return linkTokenAddress;
+    }
 
     function createTournamentPool(
         string memory _tournamentURI,
         uint256 _tournamentStart,
         uint256 _tournamentEnd,
         uint256 _tournamentEntryFees,
-        address _lending_pool_address,
         address _asset,
         uint256 _initial_invested_amount
     ) public {
         ierc20 = IERC20(_asset);
-        CreateTournament createTournament = new CreateTournament();
+        CreateTournament createTournament = new CreateTournament(
+            oracle,
+            jobId,
+            fee
+        );
         createTournament.createPool({
             _tournamentURI: _tournamentURI,
             _tournamentStart: _tournamentStart,
             _tournamentEnd: _tournamentEnd,
             _tournamentEntryFees: _tournamentEntryFees,
-            _lending_pool_address: _lending_pool_address,
+            _lending_pool_address: lendingPoolAddress,
+            _dataProvider: dataProvider,
             _asset: _asset,
             _initial_invested_amount: _initial_invested_amount,
             _sender: msg.sender
@@ -43,8 +122,8 @@ contract CreateTournamentFactory {
                     _initial_invested_amount
                 )
             );
-            ierc20.approve(_lending_pool_address, _initial_invested_amount);
-            ILendingPool(_lending_pool_address).deposit(
+            ierc20.approve(lendingPoolAddress, _initial_invested_amount);
+            ILendingPool(lendingPoolAddress).deposit(
                 _asset,
                 _initial_invested_amount,
                 address(createTournament),

@@ -58,7 +58,7 @@ def approve_erc20(amount, spender, erc20_address, account):
 # Create factory if needed as well as add one tournament contract to the factory
 def createTournament():
     account = get_account()
-    lending_pool_address = getLendingPoolAddress()
+    # lending_pool_address = getLendingPoolAddress()
     weth_token_address = config["networks"][network.show_active()]["weth_token"]
 
     get_weth(INITIAL_INVESTED_AMOUNT, account)
@@ -76,12 +76,13 @@ def createTournament():
 
     # "URI_STRING",1650012433,1651012433,1000000000000000,"0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe","0xd0a1e359811322d97991e03f863a0c30c2cf029c",1000000000000000
 
+    # "URI_STRING",1650012433,1651012433,1000000000000000,"0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe","0xd0a1e359811322d97991e03f863a0c30c2cf029c",1000000000000000, "0xF0fd5b08889E23cF31495b15cb8687F3e27A1C64"
+
     tournament = factory_contract.createTournamentPool(
         "URI_STRING",
         1650012433,
         1651012433,
         ENTRY_FEES,
-        lending_pool_address,
         weth_token_address,
         INITIAL_INVESTED_AMOUNT,
         {"from": account},
@@ -107,11 +108,7 @@ def createTournament():
 def withdraw_funds(tournament_contract):
     balance = getBalanceOfAddress(get_account(), "weth_token")
     print(f"the weth in the withdrawal account before are {balance}")
-    withdraw = tournament_contract.withdrawFunds(
-        get_account(),
-        config["networks"][network.show_active()]["aweth_token_address"],
-        {"from": get_account()},
-    )
+    withdraw = tournament_contract.withdrawFunds({"from": get_account()})
     withdraw.wait(1)
     balance = getBalanceOfAddress(get_account(), "weth_token")
     print(f"the weth in the withdrawal account are {balance}")

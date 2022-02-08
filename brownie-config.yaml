@@ -17,6 +17,9 @@ networks:
     lending_pool_addresses_provider: '0x88757f2f99175387ab4c6a4b3067c77a695b0349'
     dai_token: '0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD'
     link_token: '0xa36085F69e2889c224210F603D836748e7dC0088'
+    oracle_id: '0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8'
+    job_id: 'd5270d1c311941d0b08bead21fea7747'
+    oracle_fees: 0.1
   mainnet-fork:
     aweth_token_address: '0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'
     weth_gateway_aave: '0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'

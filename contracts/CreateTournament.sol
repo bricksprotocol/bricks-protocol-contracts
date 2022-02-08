@@ -4,6 +4,7 @@ pragma solidity >=0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+import "../interfaces/IProtocolDataProvider.sol";
 // import "../interfaces/IWETHGateway.sol";
 import "../interfaces/ILendingPool.sol";
 import "../interfaces/IERC20.sol";
@@ -25,7 +26,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
     address public asset;
     address internal lending_pool_address;
     mapping(bytes32 => address) requestMapping;
-    address public aave_asset_address;
+    address dataProvider;
 
     address private oracle;
     bytes32 private jobId;
@@ -35,11 +36,15 @@ contract CreateTournament is Ownable, ChainlinkClient {
     uint256 public fraction;
 
     // initializing oracle, jobid and fee for the required network
-    constructor() {
+    constructor(
+        address _oracle,
+        bytes32 _jobId,
+        uint256 _fee
+    ) {
         setPublicChainlinkToken();
-        oracle = 0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8;
-        jobId = "d5270d1c311941d0b08bead21fea7747";
-        fee = 0.1 * 10**18; // (Varies by network and job)
+        oracle = _oracle;
+        jobId = _jobId;
+        fee = _fee;
     }
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
@@ -50,6 +55,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
         uint256 _tournamentEnd,
         uint256 _tournamentEntryFees,
         address _lending_pool_address,
+        address _dataProvider,
         address _asset,
         uint256 _initial_invested_amount,
         address _sender
@@ -69,6 +75,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
         creator = _sender;
         asset = _asset;
         lending_pool_address = _lending_pool_address;
+        dataProvider = _dataProvider;
         initialVestedAmount = _initial_invested_amount;
     }
 
@@ -141,7 +148,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
     }
 
     // dummy funtion to withdraw funds, not to be used for production
-    function withdrawFunds(address _address, address _aave_asset) public {
+    function withdrawFunds() public {
         // IERC20 ierc20 = IERC20(_aave_asset);
         // uint256 balance = ierc20.balanceOf(address(this));
         // ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
@@ -150,7 +157,6 @@ contract CreateTournament is Ownable, ChainlinkClient {
         // todo : check if creator is zero
         // todo: check if entry fees is zero
         // todo: check if creator has participated
-        aave_asset_address = _aave_asset;
         requestData();
     }
 
@@ -211,8 +217,14 @@ contract CreateTournament is Ownable, ChainlinkClient {
         recordChainlinkFulfillment(_requestId)
     {
         address sender = requestMapping[_requestId];
-        IERC20 ierc20 = IERC20(aave_asset_address);
-        uint256 balance = ierc20.balanceOf(address(this));
+        IProtocolDataProvider provider = IProtocolDataProvider(dataProvider);
+        uint256 balance;
+        (balance, , , , , , , , ) = provider.getUserReserveData(
+            asset,
+            address(this)
+        );
+        // IERC20 ierc20 = IERC20(aave_asset_address);
+        // uint256 balance = ierc20.balanceOf(address(this));
         uint256 poolinterest = balance -
             initialVestedAmount -
             participants.length *
@@ -221,13 +233,13 @@ contract CreateTournament is Ownable, ChainlinkClient {
             uint256(10**8) +
             tournamentEntryFees;
         // uint256 withdrawAmount = poolinterest * (_fraction / uint256(10**8));
-        // ILendingPool(lending_pool_address).withdraw(
-        //     aave_asset_address,
-        //     withdrawAmount,
-        //     sender
-        // );
-        // emit withdraw(sender, withdrawAmount);
-        fraction = withdrawAmount;
+        ILendingPool(lending_pool_address).withdraw(
+            asset,
+            withdrawAmount,
+            sender
+        );
+        emit withdraw(sender, withdrawAmount);
+        fraction = balance;
     }
 
     // functions that could be in a library
