@@ -13,6 +13,9 @@ contract CreateTournament is Ownable, ChainlinkClient {
     event ParticipantJoined(address indexed participant, uint256 entryFees);
     event withdraw(address indexed participant, uint256 amount);
 
+    // custom events for testing
+    event InitiateWithdraw(address indexed participant, uint256 amount);
+
     using Chainlink for Chainlink.Request;
 
     string public tournamentURI;
@@ -20,6 +23,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
     uint256 public tournamentEnd;
     uint256 public tournamentEntryFees;
     uint256 public initialVestedAmount;
+    bool internal initialVestedRefund = false;
     address payable[] public participants;
     mapping(address => bool) public participantFees;
     address public creator;
@@ -27,24 +31,31 @@ contract CreateTournament is Ownable, ChainlinkClient {
     address internal lending_pool_address;
     mapping(bytes32 => address) requestMapping;
     address dataProvider;
+    uint256 public protocolFees;
 
     address private oracle;
     bytes32 private jobId;
     uint256 private fee;
+    address public linkTokenAddress;
 
     // custom variables for testing only
     uint256 public fraction;
+    string public data;
 
     // initializing oracle, jobid and fee for the required network
     constructor(
         address _oracle,
         bytes32 _jobId,
-        uint256 _fee
+        uint256 _fee,
+        address _linkTokenAddress
     ) {
-        setPublicChainlinkToken();
+        // setPublicChainlinkToken();
         oracle = _oracle;
         jobId = _jobId;
         fee = _fee;
+        linkTokenAddress = _linkTokenAddress;
+        setChainlinkToken(_linkTokenAddress);
+        setChainlinkOracle(_oracle);
     }
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
@@ -58,6 +69,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
         address _dataProvider,
         address _asset,
         uint256 _initial_invested_amount,
+        uint256 _protocolFees,
         address _sender
     ) public {
         require(
@@ -76,6 +88,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
         asset = _asset;
         lending_pool_address = _lending_pool_address;
         dataProvider = _dataProvider;
+        protocolFees = _protocolFees;
         initialVestedAmount = _initial_invested_amount;
     }
 
@@ -155,9 +168,40 @@ contract CreateTournament is Ownable, ChainlinkClient {
         // todo : check if the withdrawer is either creator or participant
         // todo : check if the event has ended
         // todo : check if creator is zero
-        // todo: check if entry fees is zero
-        // todo: check if creator has participated
-        requestData();
+        // todo : check if entry fees is zero
+        // todo : check if creator has participated
+        // todo : 10% protocol fees to be withdrawn
+
+        if (initialVestedAmount == 0 && tournamentEntryFees == 0) {
+            // initial invested amount as well as entry fees both are zero
+            // There is no need to withdraw any amount as aave has not been used
+            // Instead change the flags for withdrawal
+        } else if (initialVestedAmount == 0 && participantFees[msg.sender]) {
+            // only initial invested amount is zero
+            withdrawEntryFees();
+        } else if (tournamentEntryFees == 0) {
+            // only tournament entry fees is zero
+            withdrawInitialVestedAmount();
+        } else {
+            // Neither initial invested amount or tournament fee is zero
+            if (msg.sender == creator && participantFees[msg.sender]) {
+                // msg.sender is a creator as well as a participant
+                withdrawInitialVestedAmount();
+                withdrawEntryFees();
+            } else if (msg.sender == creator) {
+                // msg.sender is only creator
+                withdrawInitialVestedAmount();
+            } else if (participantFees[msg.sender]) {
+                // msg.sender is a participant
+                withdrawEntryFees();
+            }
+        }
+
+        withdrawEntryFees();
+    }
+
+    function getWithdrawalStatus() public view returns (bool) {
+        return participantFees[msg.sender];
     }
 
     function getParticipants() public view returns (address payable[] memory) {
@@ -168,7 +212,21 @@ contract CreateTournament is Ownable, ChainlinkClient {
         return creator;
     }
 
-    function requestData() internal returns (bytes32 requestId) {
+    function withdrawInitialVestedAmount() internal {
+        if (msg.sender == creator && !initialVestedRefund) {
+            ILendingPool(lending_pool_address).withdraw(
+                asset,
+                initialVestedAmount,
+                msg.sender
+            );
+            initialVestedRefund = true;
+            emit withdraw(msg.sender, initialVestedAmount);
+            emit InitiateWithdraw(msg.sender, initialVestedAmount);
+        }
+    }
+
+    function withdrawEntryFees() internal returns (bytes32 requestId) {
+        emit InitiateWithdraw(msg.sender, 1);
         Chainlink.Request memory request = buildChainlinkRequest(
             jobId,
             address(this),
@@ -176,70 +234,73 @@ contract CreateTournament is Ownable, ChainlinkClient {
         );
 
         // Set the URL to perform the GET request on
+        // request.add(
+        //     "get",
+        //     string(
+        //         abi.encodePacked(
+        //             "https://testapi.bricksprotocol.com/api/v1/contracts/fraction?user_address=",
+        //             toAsciiString(msg.sender),
+        //             "&event_address=",
+        //             toAsciiString(address(this))
+        //         )
+        //     )
+        // );
+
+        // request.add("path", "fractional_split");
+
+        // Test function
         request.add(
             "get",
-            string(
-                abi.encodePacked(
-                    "https://testapi.bricksprotocol.com/api/v1/contracts/fraction?user_address=",
-                    toAsciiString(msg.sender),
-                    "&event_address=",
-                    toAsciiString(address(this))
-                )
-            )
+            "https://ipfs.io/ipfs/QmfDiv81deQNEGGPKPWfEmbAuu9186v3dsVBSfuLSS8iBe"
         );
 
-        // Set the path to find the desired data in the API response, where the response format is:
-        // {"RAW":
-        //   {"ETH":
-        //    {"USD":
-        //     {
-        //      "VOLUME24HOUR": xxx.xxx,
-        //     }
-        //    }
-        //   }
-        //  }
-        request.add("path", "fractional_split");
+        request.add("path", "value");
 
         // Multiply the result by 1000000000000000000 to remove decimals
-        int256 timesAmount = 10**8;
-        request.addInt("times", timesAmount);
+        // int256 timesAmount = 10**8;
+        // request.addInt("times", timesAmount);
 
         // Sends the request
-        bytes32 requestID = sendChainlinkRequestTo(oracle, request, fee);
+        // bytes32 requestID = sendChainlinkRequestTo(oracle, request, fee);
+        bytes32 requestID = sendOperatorRequest(request, fee);
         requestMapping[requestID] = msg.sender;
+        fraction = 1;
+        data = "1";
     }
 
     /**
      * Receive the response in the form of uint256
      */
-    function fulfill(bytes32 _requestId, uint256 _fraction)
+    function fulfill(bytes32 _requestId, bytes memory _data)
         public
         recordChainlinkFulfillment(_requestId)
     {
-        address sender = requestMapping[_requestId];
-        IProtocolDataProvider provider = IProtocolDataProvider(dataProvider);
-        uint256 balance;
-        (balance, , , , , , , , ) = provider.getUserReserveData(
-            asset,
-            address(this)
-        );
-        // IERC20 ierc20 = IERC20(aave_asset_address);
-        // uint256 balance = ierc20.balanceOf(address(this));
-        uint256 poolinterest = balance -
-            initialVestedAmount -
-            participants.length *
-            tournamentEntryFees;
-        uint256 withdrawAmount = (poolinterest * _fraction) /
-            uint256(10**8) +
-            tournamentEntryFees;
-        // uint256 withdrawAmount = poolinterest * (_fraction / uint256(10**8));
-        ILendingPool(lending_pool_address).withdraw(
-            asset,
-            withdrawAmount,
-            sender
-        );
-        emit withdraw(sender, withdrawAmount);
-        fraction = balance;
+        // address sender = requestMapping[_requestId];
+        // IProtocolDataProvider provider = IProtocolDataProvider(dataProvider);
+        // uint256 balance;
+        // (balance, , , , , , , , ) = provider.getUserReserveData(
+        //     asset,
+        //     address(this)
+        // );
+        // // IERC20 ierc20 = IERC20(aave_asset_address);
+        // // uint256 balance = ierc20.balanceOf(address(this));
+        // uint256 poolinterest = balance -
+        //     initialVestedAmount -
+        //     participants.length *
+        //     tournamentEntryFees;
+        // uint256 withdrawAmount = (poolinterest * _fraction) /
+        //     uint256(10**8) +
+        //     tournamentEntryFees;
+        // // uint256 withdrawAmount = poolinterest * (_fraction / uint256(10**8));
+        // ILendingPool(lending_pool_address).withdraw(
+        //     asset,
+        //     withdrawAmount,
+        //     sender
+        // );
+        // participantFees[sender] = false;
+        data = string(_data);
+        // emit withdraw(sender, withdrawAmount);
+        // emit InitiateWithdraw(sender, withdrawAmount);
     }
 
     // functions that could be in a library
@@ -264,5 +325,9 @@ contract CreateTournament is Ownable, ChainlinkClient {
 
     function getFraction() public view returns (uint256) {
         return fraction;
+    }
+
+    function getData() public view returns (string memory) {
+        return data;
     }
 }

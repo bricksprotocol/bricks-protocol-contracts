@@ -2,7 +2,7 @@ from brownie import CreateTournamentFactory, config, network, interface, Contrac
 from scripts.helpful_scripts import get_account
 from web3 import Web3
 
-
+# deploy the factory contract
 def deploy_factory_contract():
     account = get_account()
     # createTournamentFactory = CreateTournamentFactory.deploy(
@@ -14,6 +14,7 @@ def deploy_factory_contract():
     return createTournamentFactory
 
 
+# fund the contract with link
 def fund_with_link(
     contract_address, account=None, link_token=None, amount=100000000000000000
 ):
@@ -31,6 +32,7 @@ def fund_with_link(
     return tx
 
 
+# set link token address for the contract
 def set_link_token_address(contract_address):
     factory_contract = Contract.from_abi(
         CreateTournamentFactory._name,
@@ -45,6 +47,7 @@ def set_link_token_address(contract_address):
     print(f"Link token address set to {link_token_address}")
 
 
+# set oracle job id and oracle id along with fees
 def set_oracle_data(contract_address):
     factory_contract = Contract.from_abi(
         CreateTournamentFactory._name,
@@ -59,6 +62,7 @@ def set_oracle_data(contract_address):
     print(f"oracle set to {oracle} {job} {fees}")
 
 
+# set minimum link to fund while creating an event
 def set_minimum_link_funder(contract_address, minimum_link_for_contract_funder):
     factory_contract = Contract.from_abi(
         CreateTournamentFactory._name,
@@ -72,6 +76,7 @@ def set_minimum_link_funder(contract_address, minimum_link_for_contract_funder):
     print(f"minimum link for funder set to {minimum_link_for_contract_funder}")
 
 
+# set the lending pool address provider
 def set_lending_pool_address_provider(contract_address):
     factory_contract = Contract.from_abi(
         CreateTournamentFactory._name,
@@ -86,6 +91,18 @@ def set_lending_pool_address_provider(contract_address):
     )
     tx.wait(1)
     print(f"lending pool address provider set to {lending_pool_addresses_provider}")
+
+
+#  set protocol fees in percentage
+def set_protocol_fees(contract_address):
+    factory_contract = Contract.from_abi(
+        CreateTournamentFactory._name,
+        contract_address,
+        CreateTournamentFactory.abi,
+    )
+    tx = factory_contract.setProtocolFees(1000, {"from": get_account()})
+    tx.wait(1)
+    print(f"protocol fees set to {1000}")
 
 
 def main():

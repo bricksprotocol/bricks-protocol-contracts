@@ -14,7 +14,7 @@ from scripts.get_weth import get_weth
 from web3 import Web3
 
 ENTRY_FEES = Web3.toWei(0.0001, "ether")
-INITIAL_INVESTED_AMOUNT = Web3.toWei(0.0001, "ether")
+INITIAL_INVESTED_AMOUNT = Web3.toWei(0.001, "ether")
 
 # get the latest lending pool contract based on the network
 def getLendingPoolAddress():

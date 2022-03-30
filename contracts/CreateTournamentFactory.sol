@@ -19,6 +19,7 @@ contract CreateTournamentFactory is Ownable {
     address dataProvider;
     address linkTokenAddress;
     uint256 linkFundValue;
+    uint256 public protocolFees; // 10% - 1000 (support upto 2 decimal places)
 
     address private oracle;
     bytes32 private jobId;
@@ -30,6 +31,14 @@ contract CreateTournamentFactory is Ownable {
 
     function getMinimumLinkFunder() public view returns (uint256) {
         return linkFundValue;
+    }
+
+    function getProtocolFees() public view returns (uint256) {
+        return protocolFees;
+    }
+
+    function setProtocolFees(uint256 _protocolFees) public onlyOwner {
+        protocolFees = _protocolFees;
     }
 
     function setLendingPoolAddressProvider(address _lendingPoolAddressProvider)
@@ -101,7 +110,8 @@ contract CreateTournamentFactory is Ownable {
         CreateTournament createTournament = new CreateTournament(
             oracle,
             jobId,
-            fee
+            fee,
+            linkTokenAddress
         );
         createTournament.createPool({
             _tournamentURI: _tournamentURI,
@@ -112,6 +122,7 @@ contract CreateTournamentFactory is Ownable {
             _dataProvider: dataProvider,
             _asset: _asset,
             _initial_invested_amount: _initial_invested_amount,
+            _protocolFees: protocolFees,
             _sender: msg.sender
         });
         if (_initial_invested_amount != 0) {

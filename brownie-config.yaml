@@ -1,13 +1,13 @@
 dependencies:
   - aave/protocol-v2@1.0.1
   - OpenZeppelin/openzeppelin-contracts@4.2.0
-  - smartcontractkit/chainlink-brownie-contracts@0.2.2
+  - smartcontractkit/chainlink@1.2.1
 compiler:
   solc:
     remappings:
       - '@aave=aave/protocol-v2@1.0.1'
       - '@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.2.0'
-      - '@chainlink=smartcontractkit/chainlink-brownie-contracts@0.2.2'
+      - '@chainlink=smartcontractkit/chainlink@1.2.1'
 networks:
   default: mainnet-fork
   kovan: 
@@ -17,8 +17,10 @@ networks:
     lending_pool_addresses_provider: '0x88757f2f99175387ab4c6a4b3067c77a695b0349'
     dai_token: '0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD'
     link_token: '0xa36085F69e2889c224210F603D836748e7dC0088'
-    oracle_id: '0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8'
-    job_id: 'd5270d1c311941d0b08bead21fea7747'
+    # oracle_id: '0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8'
+    # job_id: 'd5270d1c311941d0b08bead21fea7747'
+    oracle_id: '0x25C7ac1900de67605c0A1812109E960068B1C3d6'
+    job_id: 'b3b68ecd35464833a16613742640ae89'
     oracle_fees: 0.1
   mainnet-fork:
     aweth_token_address: '0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'
