@@ -10,6 +10,11 @@ import "../interfaces/ILendingPool.sol";
 import "../interfaces/IERC20.sol";
 
 contract CreateTournament is Ownable, ChainlinkClient {
+    enum ParticipantType {
+        CREATOR,
+        PARTICIPANT,
+        BOTH
+    }
     event ParticipantJoined(address indexed participant, uint256 entryFees);
     event withdraw(address indexed participant, uint256 amount);
 
@@ -32,15 +37,17 @@ contract CreateTournament is Ownable, ChainlinkClient {
     mapping(bytes32 => address) requestMapping;
     address dataProvider;
     uint256 public protocolFees;
-
     address private oracle;
     bytes32 private jobId;
     uint256 private fee;
     address public linkTokenAddress;
+    bool private firstWithdrawal = false;
 
     // custom variables for testing only
     uint256 public fraction;
     string public data;
+    uint256 private finalAmount;
+    mapping(address => bool) public participantWithdrawnStatus;
 
     // initializing oracle, jobid and fee for the required network
     constructor(
@@ -157,11 +164,12 @@ contract CreateTournament is Ownable, ChainlinkClient {
         }
         participantFees[msg.sender] = true;
         participants.push(payable(msg.sender));
+        participantWithdrawnStatus[msg.sender] = false;
         emit ParticipantJoined(msg.sender, tournamentEntryFees);
     }
 
     // dummy funtion to withdraw funds, not to be used for production
-    function withdrawFunds() public {
+    function withdrawFunds(uint256 withdrawPercentage) public {
         // IERC20 ierc20 = IERC20(_aave_asset);
         // uint256 balance = ierc20.balanceOf(address(this));
         // ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
@@ -172,32 +180,44 @@ contract CreateTournament is Ownable, ChainlinkClient {
         // todo : check if creator has participated
         // todo : 10% protocol fees to be withdrawn
 
-        if (initialVestedAmount == 0 && tournamentEntryFees == 0) {
-            // initial invested amount as well as entry fees both are zero
-            // There is no need to withdraw any amount as aave has not been used
-            // Instead change the flags for withdrawal
-        } else if (initialVestedAmount == 0 && participantFees[msg.sender]) {
-            // only initial invested amount is zero
-            withdrawEntryFees();
-        } else if (tournamentEntryFees == 0) {
-            // only tournament entry fees is zero
-            withdrawInitialVestedAmount();
-        } else {
-            // Neither initial invested amount or tournament fee is zero
-            if (msg.sender == creator && participantFees[msg.sender]) {
-                // msg.sender is a creator as well as a participant
-                withdrawInitialVestedAmount();
-                withdrawEntryFees();
-            } else if (msg.sender == creator) {
-                // msg.sender is only creator
-                withdrawInitialVestedAmount();
-            } else if (participantFees[msg.sender]) {
-                // msg.sender is a participant
-                withdrawEntryFees();
-            }
+        require(
+            participantWithdrawnStatus[msg.sender] == false,
+            "Participant has already withdrawn"
+        );
+
+        // if (initialVestedAmount == 0 && tournamentEntryFees == 0) {
+        //     // initial invested amount as well as entry fees both are zero
+        //     // There is no need to withdraw any amount as aave has not been used
+        //     // Instead change the flags for withdrawal
+        // } else if (initialVestedAmount == 0 && participantFees[msg.sender]) {
+        //     // only initial invested amount is zero
+        //     withdrawEntryFees();
+        // } else if (tournamentEntryFees == 0) {
+        //     // only tournament entry fees is zero
+        //     withdrawInitialVestedAmount();
+        // } else {
+        //     // Neither initial invested amount or tournament fee is zero
+        //     if (msg.sender == creator && participantFees[msg.sender]) {
+        //         // msg.sender is a creator as well as a participant
+        //         withdrawInitialVestedAmount();
+        //         withdrawEntryFees();
+        //     } else if (msg.sender == creator) {
+        //         // msg.sender is only creator
+        //         withdrawInitialVestedAmount();
+        //     } else if (participantFees[msg.sender]) {
+        //         // msg.sender is a participant
+        //         withdrawEntryFees();
+        //     }
+        // }
+        // withdrawEntryFees();
+
+        if (msg.sender == creator) {
+            withdrawInitialVestedAmount(withdrawPercentage);
         }
 
-        withdrawEntryFees();
+        if (participantFees[msg.sender]) {
+            withdrawEntryFeesWithRewards(withdrawPercentage);
+        }
     }
 
     function getWithdrawalStatus() public view returns (bool) {
@@ -213,7 +233,11 @@ contract CreateTournament is Ownable, ChainlinkClient {
     }
 
     function withdrawInitialVestedAmount() internal {
-        if (msg.sender == creator && !initialVestedRefund) {
+        if (
+            msg.sender == creator &&
+            !initialVestedRefund &&
+            initialVestedAmount > 0
+        ) {
             ILendingPool(lending_pool_address).withdraw(
                 asset,
                 initialVestedAmount,
@@ -225,47 +249,72 @@ contract CreateTournament is Ownable, ChainlinkClient {
         }
     }
 
-    function withdrawEntryFees() internal returns (bytes32 requestId) {
-        emit InitiateWithdraw(msg.sender, 1);
-        Chainlink.Request memory request = buildChainlinkRequest(
-            jobId,
-            address(this),
-            this.fulfill.selector
-        );
+    // function withdrawEntryFees() internal returns (bytes32 requestId) {
+    //     emit InitiateWithdraw(msg.sender, 1);
+    //     Chainlink.Request memory request = buildChainlinkRequest(
+    //         jobId,
+    //         address(this),
+    //         this.fulfill.selector
+    //     );
 
-        // Set the URL to perform the GET request on
-        // request.add(
-        //     "get",
-        //     string(
-        //         abi.encodePacked(
-        //             "https://testapi.bricksprotocol.com/api/v1/contracts/fraction?user_address=",
-        //             toAsciiString(msg.sender),
-        //             "&event_address=",
-        //             toAsciiString(address(this))
-        //         )
-        //     )
-        // );
+    //     // Set the URL to perform the GET request on
+    //     // request.add(
+    //     //     "get",
+    //     //     string(
+    //     //         abi.encodePacked(
+    //     //             "https://testapi.bricksprotocol.com/api/v1/contracts/fraction?user_address=",
+    //     //             toAsciiString(msg.sender),
+    //     //             "&event_address=",
+    //     //             toAsciiString(address(this))
+    //     //         )
+    //     //     )
+    //     // );
 
-        // request.add("path", "fractional_split");
+    //     // request.add("path", "fractional_split");
 
-        // Test function
-        request.add(
-            "get",
-            "https://ipfs.io/ipfs/QmfDiv81deQNEGGPKPWfEmbAuu9186v3dsVBSfuLSS8iBe"
-        );
+    //     // Test function
+    //     request.add(
+    //         "get",
+    //         "https://ipfs.io/ipfs/QmfDiv81deQNEGGPKPWfEmbAuu9186v3dsVBSfuLSS8iBe"
+    //     );
 
-        request.add("path", "value");
+    //     request.add("path", "value");
 
-        // Multiply the result by 1000000000000000000 to remove decimals
-        // int256 timesAmount = 10**8;
-        // request.addInt("times", timesAmount);
+    //     // Multiply the result by 1000000000000000000 to remove decimals
+    //     // int256 timesAmount = 10**8;
+    //     // request.addInt("times", timesAmount);
 
-        // Sends the request
-        // bytes32 requestID = sendChainlinkRequestTo(oracle, request, fee);
-        bytes32 requestID = sendOperatorRequest(request, fee);
-        requestMapping[requestID] = msg.sender;
-        fraction = 1;
-        data = "1";
+    //     // Sends the request
+    //     // bytes32 requestID = sendChainlinkRequestTo(oracle, request, fee);
+    //     bytes32 requestID = sendOperatorRequest(request, fee);
+    //     requestMapping[requestID] = msg.sender;
+    //     fraction = 1;
+    //     data = "1";
+    // }
+
+    function withdrawEntryFeesWithRewards(uint256 rewardsPercentage) {
+        if (tournamentEntryFees > 0) {
+            IERC20 ierc20 = IERC20(
+                "0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347"
+            );
+            if (!firstWithdrawal) {
+                firstWithdrawal = true;
+                finalAmount = ierc20.balanceOf(address(this));
+            }
+            uint256 totalParticipantFees = tournamentEntryFees *
+                participants.length;
+            uint256 rewards = (finalAmount) -
+                (totalParticipantFees + initialVestedAmount);
+            uint256 amountToWithdraw = participantFees +
+                ((rewardsPercentage * rewards) / 100);
+            ILendingPool(lending_pool_address).withdraw(
+                asset,
+                amountToWithdraw,
+                msg.sender
+            );
+            emit withdraw(msg.sender, amountToWithdraw);
+            emit InitiateWithdraw(msg.sender, amountToWithdraw);
+        }
     }
 
     /**
