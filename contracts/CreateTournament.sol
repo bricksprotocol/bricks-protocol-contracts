@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity >=0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "../interfaces/IProtocolDataProvider.sol";
-// import "../interfaces/IWETHGateway.sol";
+import "../interfaces/IWETHGateway.sol";
 import "../interfaces/ILendingPool.sol";
 import "../interfaces/IERC20.sol";
 
@@ -53,14 +52,13 @@ contract CreateTournament is Ownable, ChainlinkClient {
     constructor(
         address _oracle,
         bytes32 _jobId,
-        uint256 _fee,
-        address _linkTokenAddress
+        uint256 _fee //address _linkTokenAddress
     ) {
         // setPublicChainlinkToken();
         oracle = _oracle;
         jobId = _jobId;
         fee = _fee;
-        linkTokenAddress = _linkTokenAddress;
+        //linkTokenAddress = _linkTokenAddress;
         setChainlinkToken(_linkTokenAddress);
         setChainlinkOracle(_oracle);
     }

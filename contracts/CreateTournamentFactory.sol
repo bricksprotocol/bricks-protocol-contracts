@@ -143,13 +143,13 @@ contract CreateTournamentFactory is Ownable {
         }
         tournamentsArray.push(createTournament);
         tournamentsMapping[address(createTournament)] = true;
-        IERC20 linkTokenContract = IERC20(linkTokenAddress);
-        linkTokenContract.approve(address(this), linkFundValue);
-        linkTokenContract.transferFrom(
-            address(this),
-            address(createTournament),
-            linkFundValue
-        );
+        // IERC20 linkTokenContract = IERC20(linkTokenAddress);
+        // linkTokenContract.approve(address(this), linkFundValue);
+        // linkTokenContract.transferFrom(
+        //     address(this),
+        //     address(createTournament),
+        //     linkFundValue
+        // );
         emit tournamentCreated(address(createTournament));
     }
 
