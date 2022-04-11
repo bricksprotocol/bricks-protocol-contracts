@@ -2,13 +2,13 @@
 pragma solidity >=0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+//import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 import "../interfaces/IProtocolDataProvider.sol";
 import "../interfaces/IWETHGateway.sol";
 import "../interfaces/ILendingPool.sol";
 import "../interfaces/IERC20.sol";
 
-contract CreateTournament is Ownable, ChainlinkClient {
+contract CreateTournament is Ownable {
     enum ParticipantType {
         CREATOR,
         PARTICIPANT,
@@ -20,7 +20,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
     // custom events for testing
     event InitiateWithdraw(address indexed participant, uint256 amount);
 
-    using Chainlink for Chainlink.Request;
+    //using Chainlink for Chainlink.Request;
 
     string public tournamentURI;
     uint256 public tournamentStart;
@@ -59,8 +59,8 @@ contract CreateTournament is Ownable, ChainlinkClient {
         jobId = _jobId;
         fee = _fee;
         //linkTokenAddress = _linkTokenAddress;
-        setChainlinkToken(_linkTokenAddress);
-        setChainlinkOracle(_oracle);
+        //setChainlinkToken(_linkTokenAddress);
+        //setChainlinkOracle(_oracle);
     }
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
@@ -183,6 +183,8 @@ contract CreateTournament is Ownable, ChainlinkClient {
             "Participant has already withdrawn"
         );
 
+        require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
+
         // if (initialVestedAmount == 0 && tournamentEntryFees == 0) {
         //     // initial invested amount as well as entry fees both are zero
         //     // There is no need to withdraw any amount as aave has not been used
@@ -210,7 +212,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
         // withdrawEntryFees();
 
         if (msg.sender == creator) {
-            withdrawInitialVestedAmount(withdrawPercentage);
+            withdrawInitialVestedAmount();
         }
 
         if (participantFees[msg.sender]) {
@@ -290,11 +292,9 @@ contract CreateTournament is Ownable, ChainlinkClient {
     //     data = "1";
     // }
 
-    function withdrawEntryFeesWithRewards(uint256 rewardsPercentage) {
+    function withdrawEntryFeesWithRewards(uint256 rewardsPercentage) public {
         if (tournamentEntryFees > 0) {
-            IERC20 ierc20 = IERC20(
-                "0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347"
-            );
+            IERC20 ierc20 = IERC20(0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347);
             if (!firstWithdrawal) {
                 firstWithdrawal = true;
                 finalAmount = ierc20.balanceOf(address(this));
@@ -303,7 +303,7 @@ contract CreateTournament is Ownable, ChainlinkClient {
                 participants.length;
             uint256 rewards = (finalAmount) -
                 (totalParticipantFees + initialVestedAmount);
-            uint256 amountToWithdraw = participantFees +
+            uint256 amountToWithdraw = tournamentEntryFees +
                 ((rewardsPercentage * rewards) / 100);
             ILendingPool(lending_pool_address).withdraw(
                 asset,
@@ -318,37 +318,37 @@ contract CreateTournament is Ownable, ChainlinkClient {
     /**
      * Receive the response in the form of uint256
      */
-    function fulfill(bytes32 _requestId, bytes memory _data)
-        public
-        recordChainlinkFulfillment(_requestId)
-    {
-        // address sender = requestMapping[_requestId];
-        // IProtocolDataProvider provider = IProtocolDataProvider(dataProvider);
-        // uint256 balance;
-        // (balance, , , , , , , , ) = provider.getUserReserveData(
-        //     asset,
-        //     address(this)
-        // );
-        // // IERC20 ierc20 = IERC20(aave_asset_address);
-        // // uint256 balance = ierc20.balanceOf(address(this));
-        // uint256 poolinterest = balance -
-        //     initialVestedAmount -
-        //     participants.length *
-        //     tournamentEntryFees;
-        // uint256 withdrawAmount = (poolinterest * _fraction) /
-        //     uint256(10**8) +
-        //     tournamentEntryFees;
-        // // uint256 withdrawAmount = poolinterest * (_fraction / uint256(10**8));
-        // ILendingPool(lending_pool_address).withdraw(
-        //     asset,
-        //     withdrawAmount,
-        //     sender
-        // );
-        // participantFees[sender] = false;
-        data = string(_data);
-        // emit withdraw(sender, withdrawAmount);
-        // emit InitiateWithdraw(sender, withdrawAmount);
-    }
+    // function fulfill(bytes32 _requestId, bytes memory _data)
+    //     public
+    //     recordChainlinkFulfillment(_requestId)
+    // {
+    //     // address sender = requestMapping[_requestId];
+    //     // IProtocolDataProvider provider = IProtocolDataProvider(dataProvider);
+    //     // uint256 balance;
+    //     // (balance, , , , , , , , ) = provider.getUserReserveData(
+    //     //     asset,
+    //     //     address(this)
+    //     // );
+    //     // // IERC20 ierc20 = IERC20(aave_asset_address);
+    //     // // uint256 balance = ierc20.balanceOf(address(this));
+    //     // uint256 poolinterest = balance -
+    //     //     initialVestedAmount -
+    //     //     participants.length *
+    //     //     tournamentEntryFees;
+    //     // uint256 withdrawAmount = (poolinterest * _fraction) /
+    //     //     uint256(10**8) +
+    //     //     tournamentEntryFees;
+    //     // // uint256 withdrawAmount = poolinterest * (_fraction / uint256(10**8));
+    //     // ILendingPool(lending_pool_address).withdraw(
+    //     //     asset,
+    //     //     withdrawAmount,
+    //     //     sender
+    //     // );
+    //     // participantFees[sender] = false;
+    //     data = string(_data);
+    //     // emit withdraw(sender, withdrawAmount);
+    //     // emit InitiateWithdraw(sender, withdrawAmount);
+    // }
 
     // functions that could be in a library
     function toAsciiString(address x) internal pure returns (string memory) {
