@@ -3,13 +3,13 @@
 pragma solidity >=0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./CreateTournament.sol";
-import "../interfaces/IERC20.sol";
-import "../interfaces/ILendingPool.sol";
-import "../interfaces/ILendingPoolAddressesProvider.sol";
+import "./Tournament.sol";
+import "./interfaces/IERC20.sol";
+import "./interfaces/IPool.sol";
+import "./interfaces/IPoolAddressesProvider.sol";
 
 contract CreateTournamentFactory is Ownable {
-    CreateTournament[] public tournamentsArray;
+    Tournament[] public tournamentsArray;
     mapping(address => bool) tournamentsMapping;
     event tournamentCreated(address tournamentAddress);
     IERC20 ierc20;
@@ -29,14 +29,6 @@ contract CreateTournamentFactory is Ownable {
         linkFundValue = _value;
     }
 
-    function getMinimumLinkFunder() public view returns (uint256) {
-        return linkFundValue;
-    }
-
-    function getProtocolFees() public view returns (uint256) {
-        return protocolFees;
-    }
-
     function setProtocolFees(uint256 _protocolFees) public onlyOwner {
         protocolFees = _protocolFees;
     }
@@ -46,14 +38,10 @@ contract CreateTournamentFactory is Ownable {
         onlyOwner
     {
         lendingPoolAddressProvider = _lendingPoolAddressProvider;
-        lendingPoolAddress = ILendingPoolAddressesProvider(
-            _lendingPoolAddressProvider
-        ).getLendingPool();
-        dataProvider = ILendingPoolAddressesProvider(
-            _lendingPoolAddressProvider
-        ).getAddress(
-                0x0100000000000000000000000000000000000000000000000000000000000000
-            );
+        lendingPoolAddress = IPoolAddressesProvider(_lendingPoolAddressProvider)
+            .getPool();
+        dataProvider = IPoolAddressesProvider(_lendingPoolAddressProvider)
+            .getPoolDataProvider();
     }
 
     function getLendingPoolAddressProvider()
@@ -107,13 +95,9 @@ contract CreateTournamentFactory is Ownable {
         uint256 _initial_invested_amount
     ) public {
         ierc20 = IERC20(_asset);
-        CreateTournament createTournament = new CreateTournament(
-            oracle,
-            jobId,
-            fee,
-            linkTokenAddress
-        );
-        createTournament.createPool({
+        Tournament tournament = new Tournament();
+
+        tournament.createPool({
             _tournamentURI: _tournamentURI,
             _tournamentStart: _tournamentStart,
             _tournamentEnd: _tournamentEnd,
@@ -126,23 +110,31 @@ contract CreateTournamentFactory is Ownable {
             _sender: msg.sender
         });
         if (_initial_invested_amount != 0) {
+            // require(
+            //     ierc20.transferFrom(
+            //         msg.sender,
+            //         address(this),
+            //         _initial_invested_amount
+            //     )
+            // );
+            ierc20.approve(lendingPoolAddress, _initial_invested_amount);
             require(
                 ierc20.transferFrom(
                     msg.sender,
                     address(this),
                     _initial_invested_amount
-                )
+                ),
+                "WETH Transfer failed!"
             );
-            ierc20.approve(lendingPoolAddress, _initial_invested_amount);
-            ILendingPool(lendingPoolAddress).deposit(
+            IPool(lendingPoolAddress).supply(
                 _asset,
                 _initial_invested_amount,
-                address(createTournament),
+                address(this),
                 0
             );
         }
-        tournamentsArray.push(createTournament);
-        tournamentsMapping[address(createTournament)] = true;
+        tournamentsArray.push(tournament);
+        tournamentsMapping[address(tournament)] = true;
         // IERC20 linkTokenContract = IERC20(linkTokenAddress);
         // linkTokenContract.approve(address(this), linkFundValue);
         // linkTokenContract.transferFrom(
@@ -150,7 +142,7 @@ contract CreateTournamentFactory is Ownable {
         //     address(createTournament),
         //     linkFundValue
         // );
-        emit tournamentCreated(address(createTournament));
+        emit tournamentCreated(address(tournament));
     }
 
     function getTournamentDetails(uint256 _index)
@@ -188,6 +180,6 @@ contract CreateTournamentFactory is Ownable {
             tournamentsMapping[_tournament],
             "This tournament contract does not exists"
         );
-        return CreateTournament(_tournament).getTournamentDetails();
+        return Tournament(_tournament).getTournamentDetails();
     }
 }
