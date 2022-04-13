@@ -7,12 +7,14 @@ import "./Tournament.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IPool.sol";
 import "./interfaces/IPoolAddressesProvider.sol";
+import "./interfaces/IWeth.sol";
 
 contract CreateTournamentFactory is Ownable {
     Tournament[] public tournamentsArray;
     mapping(address => bool) tournamentsMapping;
     event tournamentCreated(address tournamentAddress);
     IERC20 ierc20;
+    IWeth iweth;
 
     address lendingPoolAddressProvider;
     address lendingPoolAddress;
@@ -93,10 +95,12 @@ contract CreateTournamentFactory is Ownable {
         uint256 _tournamentEntryFees,
         address _asset,
         uint256 _initial_invested_amount
-    ) public {
-        ierc20 = IERC20(_asset);
+    ) public payable {
+        //ierc20 = IERC20(_asset);
+        iweth = IWeth(_asset);
         Tournament tournament = new Tournament();
-
+        tournamentsArray.push(tournament);
+        tournamentsMapping[address(tournament)] = true;
         tournament.createPool({
             _tournamentURI: _tournamentURI,
             _tournamentStart: _tournamentStart,
@@ -117,7 +121,6 @@ contract CreateTournamentFactory is Ownable {
             //         _initial_invested_amount
             //     )
             // );
-            ierc20.approve(lendingPoolAddress, _initial_invested_amount);
             require(
                 ierc20.transferFrom(
                     msg.sender,
@@ -126,15 +129,23 @@ contract CreateTournamentFactory is Ownable {
                 ),
                 "WETH Transfer failed!"
             );
-            IPool(lendingPoolAddress).supply(
-                _asset,
-                _initial_invested_amount,
-                address(this),
-                0
-            );
+            iweth.approve(lendingPoolAddress, msg.value);
+
+            // IPool(lendingPoolAddress).supply(
+            //     _asset,
+            //     _initial_invested_amount,
+            //     address(tournament),
+            //     0
+            // );
+
+            IWethGateway(0x509B2506FbA1BD41765F6A82C7B0Dd4229191768).depositETH(
+                    IPoolAddressesProvider(lendingPoolAddressProvider)
+                        .getPool(),
+                    address(tournament),
+                    0
+                );
         }
-        tournamentsArray.push(tournament);
-        tournamentsMapping[address(tournament)] = true;
+
         // IERC20 linkTokenContract = IERC20(linkTokenAddress);
         // linkTokenContract.approve(address(this), linkFundValue);
         // linkTokenContract.transferFrom(

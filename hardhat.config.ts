@@ -18,6 +18,14 @@ const config: HardhatUserConfig = {
     kovan: {
       url: "https://eth-kovan.alchemyapi.io/v2/ya8sHgErEz7TqKiH1fyQH7_kd9GCwNFu",
       accounts: [privateKey!],
+      gas: "auto",
+      gasPrice: "auto",
+      // gas: 210000000,
+      // gasPrice: 800000000000,
+    },
+    rinkeby: {
+      url: "https://eth-kovan.alchemyapi.io/v2/UKMdZt923dSk_Gt1U9ymx-1rtsmL7kC_",
+      accounts: [privateKey!],
       // gas: 210000000,
       // gasPrice: 800000000000,
     },

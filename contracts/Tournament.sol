@@ -145,13 +145,13 @@ contract Tournament is Ownable {
         );
 
         if (tournamentEntryFees != 0) {
-            require(
-                ierc20.transferFrom(
-                    msg.sender,
-                    address(this),
-                    tournamentEntryFees
-                )
-            );
+            // require(
+            //     ierc20.transferFrom(
+            //         msg.sender,
+            //         address(this),
+            //         tournamentEntryFees
+            //     )
+            // );
             ierc20.approve(lending_pool_address, tournamentEntryFees);
             IPool(lending_pool_address).supply(
                 asset,
