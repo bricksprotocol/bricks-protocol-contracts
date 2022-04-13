@@ -121,15 +121,15 @@ contract CreateTournamentFactory is Ownable {
             //         _initial_invested_amount
             //     )
             // );
-            require(
-                ierc20.transferFrom(
-                    msg.sender,
-                    address(this),
-                    _initial_invested_amount
-                ),
-                "WETH Transfer failed!"
-            );
-            iweth.approve(lendingPoolAddress, msg.value);
+            // require(
+            //     iweth.transferFrom(
+            //         msg.sender,
+            //         address(this),
+            //         _initial_invested_amount
+            //     ),
+            //     "WETH Transfer failed!"
+            // );
+            //iweth.approve(lendingPoolAddress, msg.value);
 
             // IPool(lendingPoolAddress).supply(
             //     _asset,
