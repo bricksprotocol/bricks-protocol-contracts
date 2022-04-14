@@ -7,10 +7,12 @@ import { run, ethers } from "hardhat";
 import { config } from "../config";
 import Web3 from "web3";
 import wethAbi from "../abis/weth.json";
+import usdcAbi from "../abis/usdc.json";
+import adaiAbi from "../abis/adai.json";
 import { makeTransferProxyAdminOwnership } from "@openzeppelin/hardhat-upgrades/dist/admin";
 const ETHERSCAN_TX_URL = "https://kovan.etherscan.io/tx/";
-const ENTRY_FEES = Web3.utils.toWei("0.0001", "ether");
-const INITIAL_INVESTED_AMOUNT = Web3.utils.toWei("0.001", "ether");
+let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
+let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -35,8 +37,9 @@ async function main() {
   const privateKey = process.env.PRIVATE_KEY as any;
   const wallet = new ethers.Wallet(privateKey, provider);
 
-  const wethToken = new ethers.Contract(config.kovan.wethToken, wethAbi, owner);
+  //const wethToken = new ethers.Contract(config.kovan.wethToken, wethAbi, owner);
 
+  const daiToken = new ethers.Contract(config.kovan.daiToken, usdcAbi, owner);
   const tournamentFactory = await createTournamentFactory
     .connect(owner)
     .deploy();
@@ -45,34 +48,34 @@ async function main() {
 
   console.log("Tournament Factory deployed to:", tournamentFactory.address);
 
-  await wethToken.approve(
+  await daiToken.approve(
     tournamentFactory.address,
-    ethers.utils.parseEther("0.001")
+    // ethers.utils.parseEther("0.001")
+    INITIAL_INVESTED_AMOUNT
   );
 
   // console.log(
   //   await wethToken.allowance(owner.address, tournamentFactory.address)
   // );
-  await tournamentFactory
+  const transaction = await tournamentFactory
     .connect(owner)
     .setLendingPoolAddressProvider(lendingPoolProviderAddress);
+  await transaction.wait();
 
   console.log(
     "Lending Address",
     await tournamentFactory.getLendingPoolAddressProvider()
   );
-  const options = { value: ethers.utils.parseEther("0.001") };
-  await tournamentFactory
-    .connect(owner)
-    .createTournamentPool(
-      "URI",
-      1660012433,
-      1661012433,
-      ENTRY_FEES,
-      config.kovan.wethToken,
-      INITIAL_INVESTED_AMOUNT,
-      options
-    );
+  // const options = { value: ethers.utils.parseEther("0.001") };
+  await tournamentFactory.connect(owner).createTournamentPool(
+    "URI",
+    1649925684,
+    1649925720,
+    ENTRY_FEES,
+    config.kovan.daiToken,
+    INITIAL_INVESTED_AMOUNT
+    // options
+  );
 
   // console.log("created");
   // // const firstAddressInitialBalance = await wethToken.balanceOf(owner.address);
@@ -82,11 +85,18 @@ async function main() {
 
   const tournamentAddress = await tournamentFactory
     .connect(owner)
-    .getTournamentDetails(0);
+    .tournamentsArray(0);
   console.log("Adress", tournamentAddress);
   const tournament = await (
     await ethers.getContractFactory("Tournament")
   ).attach(await tournamentFactory.tournamentsArray(0));
+
+  const adaiToken = new ethers.Contract(config.kovan.adaiToken, usdcAbi, owner);
+
+  console.log(
+    "Tournament Balance ",
+    await adaiToken.balanceOf(tournamentAddress)
+  );
 
   // const txn = await tournament.joinTournament();
   // await txn.wait();

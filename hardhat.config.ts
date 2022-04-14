@@ -12,20 +12,23 @@ import "./tasks/block-number";
 import { HardhatUserConfig } from "hardhat/types";
 
 const privateKey = process.env.PRIVATE_KEY;
+const secondPvtKey = process.env.PRIVATE_KEY_SECOND;
 const config: HardhatUserConfig = {
   networks: {
     hardhat: {},
     kovan: {
       url: "https://eth-kovan.alchemyapi.io/v2/ya8sHgErEz7TqKiH1fyQH7_kd9GCwNFu",
-      accounts: [privateKey!],
+      accounts: [privateKey!, secondPvtKey!],
       gas: "auto",
       gasPrice: "auto",
       // gas: 210000000,
       // gasPrice: 800000000000,
     },
     rinkeby: {
-      url: "https://eth-kovan.alchemyapi.io/v2/UKMdZt923dSk_Gt1U9ymx-1rtsmL7kC_",
-      accounts: [privateKey!],
+      url: "https://rinkeby.infura.io/v3/fa404260aa8a46dca23989f9dd56275b",
+      accounts: [`0x${privateKey!}`],
+      gas: "auto",
+      gasPrice: "auto",
       // gas: 210000000,
       // gasPrice: 800000000000,
     },

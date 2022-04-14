@@ -3,10 +3,13 @@ pragma solidity >=0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 //import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-import "./interfaces/IProtocolDataProvider.sol";
+//import "./interfaces/IProtocolDataProvider.sol";
 import "./interfaces/IWethGateway.sol";
-import "./interfaces/IPool.sol";
-import "./interfaces/IERC20.sol";
+//import "./interfaces/IPool.sol";
+import "./aave/v2/ILendingPool.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+//import "./interfaces/IERC20.sol";
 
 contract Tournament is Ownable {
     enum ParticipantType {
@@ -132,7 +135,7 @@ contract Tournament is Ownable {
 
     function joinTournament() public {
         // check if the values match
-        IERC20 ierc20 = IERC20(asset);
+        ERC20 ierc20 = ERC20(asset);
         uint256 balance = ierc20.balanceOf(msg.sender);
         require(
             balance >= tournamentEntryFees,
@@ -145,15 +148,15 @@ contract Tournament is Ownable {
         );
 
         if (tournamentEntryFees != 0) {
-            // require(
-            //     ierc20.transferFrom(
-            //         msg.sender,
-            //         address(this),
-            //         tournamentEntryFees
-            //     )
-            // );
+            require(
+                ierc20.transferFrom(
+                    msg.sender,
+                    address(this),
+                    tournamentEntryFees
+                )
+            );
             ierc20.approve(lending_pool_address, tournamentEntryFees);
-            IPool(lending_pool_address).supply(
+            ILendingPool(lending_pool_address).deposit(
                 asset,
                 tournamentEntryFees,
                 address(this),
@@ -238,7 +241,7 @@ contract Tournament is Ownable {
             !initialVestedRefund &&
             initialVestedAmount > 0
         ) {
-            IPool(lending_pool_address).withdraw(
+            ILendingPool(lending_pool_address).withdraw(
                 asset,
                 initialVestedAmount,
                 msg.sender
@@ -302,7 +305,7 @@ contract Tournament is Ownable {
                 (totalParticipantFees + initialVestedAmount);
             uint256 amountToWithdraw = tournamentEntryFees +
                 ((rewardsPercentage * rewards) / 100);
-            IPool(lending_pool_address).withdraw(
+            ILendingPool(lending_pool_address).withdraw(
                 asset,
                 amountToWithdraw,
                 msg.sender
