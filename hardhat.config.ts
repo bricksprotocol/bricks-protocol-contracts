@@ -17,8 +17,8 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {},
     kovan: {
-      url: "https://eth-kovan.alchemyapi.io/v2/ya8sHgErEz7TqKiH1fyQH7_kd9GCwNFu",
-      accounts: [privateKey!, secondPvtKey!],
+      url: "https://kovan.infura.io/v3/fa404260aa8a46dca23989f9dd56275b",
+      accounts: [`0x${privateKey!}`, `0x${secondPvtKey!}`],
       gas: "auto",
       gasPrice: "auto",
       // gas: 210000000,

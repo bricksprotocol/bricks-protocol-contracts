@@ -35,7 +35,7 @@ contract Tournament is Ownable {
     mapping(address => bool) public participantFees;
     address public creator;
     address public asset;
-    address internal lending_pool_address;
+    address public lending_pool_address;
     mapping(bytes32 => address) requestMapping;
     address dataProvider;
     uint256 public protocolFees;
@@ -80,10 +80,10 @@ contract Tournament is Ownable {
         uint256 _protocolFees,
         address _sender
     ) public {
-        require(
-            _tournamentStart >= block.timestamp,
-            "Start time has already passed!"
-        );
+        // require(
+        //     _tournamentStart >= block.timestamp,
+        //     "Start time has already passed!"
+        // );
         require(
             _tournamentEnd > _tournamentStart,
             "Tournament should end after start point!"
@@ -181,13 +181,6 @@ contract Tournament is Ownable {
         // todo : check if creator has participated
         // todo : 10% protocol fees to be withdrawn
 
-        require(
-            participantWithdrawnStatus[msg.sender] == false,
-            "Participant has already withdrawn"
-        );
-
-        require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
-
         // if (initialVestedAmount == 0 && tournamentEntryFees == 0) {
         //     // initial invested amount as well as entry fees both are zero
         //     // There is no need to withdraw any amount as aave has not been used
@@ -236,17 +229,21 @@ contract Tournament is Ownable {
     }
 
     function withdrawInitialVestedAmount() internal {
+        //ERC20 ierc20 = ERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
+
         if (
             msg.sender == creator &&
             !initialVestedRefund &&
             initialVestedAmount > 0
         ) {
+            //ierc20.approve(msg.sender, initialVestedAmount);
             ILendingPool(lending_pool_address).withdraw(
-                asset,
+                address(asset),
                 initialVestedAmount,
                 msg.sender
             );
             initialVestedRefund = true;
+            totalWithdrawnAmount += initialVestedAmount;
             emit withdraw(msg.sender, initialVestedAmount);
             emit InitiateWithdraw(msg.sender, initialVestedAmount);
         }
@@ -297,7 +294,7 @@ contract Tournament is Ownable {
 
     function withdrawEntryFeesWithRewards(uint256 rewardsPercentage) public {
         if (tournamentEntryFees > 0) {
-            IERC20 ierc20 = IERC20(0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347);
+            ERC20 ierc20 = ERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
             uint256 totalParticipantFees = tournamentEntryFees *
                 participants.length;
             uint256 rewards = (ierc20.balanceOf(address(this)) +
@@ -306,7 +303,7 @@ contract Tournament is Ownable {
             uint256 amountToWithdraw = tournamentEntryFees +
                 ((rewardsPercentage * rewards) / 100);
             ILendingPool(lending_pool_address).withdraw(
-                asset,
+                address(asset),
                 amountToWithdraw,
                 msg.sender
             );

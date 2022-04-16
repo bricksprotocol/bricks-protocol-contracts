@@ -69,8 +69,8 @@ async function main() {
   // const options = { value: ethers.utils.parseEther("0.001") };
   await tournamentFactory.connect(owner).createTournamentPool(
     "URI",
-    1649925684,
-    1649925720,
+    1650011248,
+    1650011596,
     ENTRY_FEES,
     config.kovan.daiToken,
     INITIAL_INVESTED_AMOUNT

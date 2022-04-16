@@ -103,7 +103,7 @@ contract CreateTournamentFactory is Ownable {
         address _asset,
         uint256 _initial_invested_amount
     ) public {
-        ierc20 = ERC20(0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD);
+        ierc20 = ERC20(_asset);
         //iweth = IWeth(_asset);
         Tournament tournament = new Tournament();
         tournamentsArray.push(tournament);
@@ -153,8 +153,8 @@ contract CreateTournamentFactory is Ownable {
             //     );
 
             ILendingPool(lendingPoolAddress).deposit(
-                0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD,
-                50 * 10**18,
+                _asset,
+                _initial_invested_amount,
                 address(tournament),
                 0
             );
