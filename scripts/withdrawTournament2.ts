@@ -5,7 +5,7 @@ import usdcAbi from "../abis/usdc.json";
 import EthCrypto from "eth-crypto";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0xda8D72c67A543B1F5177d411D94d5fC7CBB817Cf";
+const tournamentAddress = "0xfdA75ABc927aeD011Cd16B5F0D1C702A9123D4d1";
 const token = config.mumbaiTest.usdtToken;
 const aToken = config.mumbaiTest.ausdtToken;
 

@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 //import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 //import "./interfaces/IProtocolDataProvider.sol";
 import "./interfaces/IWethGateway.sol";
-//import "./interfaces/IPool.sol";
-import "./aave/v2/ILendingPool.sol";
+import "./interfaces/IPool.sol";
+//Simport "./aave/v2/ILendingPool.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 //import "./libraries/Verify.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -169,7 +169,7 @@ contract Tournament is Ownable {
                 )
             );
             ierc20.approve(lending_pool_address, tournamentEntryFees);
-            ILendingPool(lending_pool_address).deposit(
+            IPool(lending_pool_address).supply(
                 asset,
                 tournamentEntryFees,
                 address(this),
@@ -258,7 +258,7 @@ contract Tournament is Ownable {
             initialVestedAmount > 0
         ) {
             //ierc20.approve(msg.sender, initialVestedAmount);
-            ILendingPool(lending_pool_address).withdraw(
+            IPool(lending_pool_address).withdraw(
                 address(asset),
                 initialVestedAmount,
                 msg.sender
@@ -323,7 +323,7 @@ contract Tournament is Ownable {
                 (totalParticipantFees + initialVestedAmount);
             uint256 amountToWithdraw = tournamentEntryFees +
                 ((rewardsPercentage * rewards) / 100);
-            ILendingPool(lending_pool_address).withdraw(
+            IPool(lending_pool_address).withdraw(
                 address(asset),
                 amountToWithdraw,
                 msg.sender

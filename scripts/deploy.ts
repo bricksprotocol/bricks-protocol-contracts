@@ -56,11 +56,12 @@ async function main() {
 
   console.log("Tournament Factory deployed to:", tournamentFactory.address);
 
-  await daiToken.approve(
+  const approveTxn = await daiToken.approve(
     tournamentFactory.address,
     // ethers.utils.parseEther("0.001")
     INITIAL_INVESTED_AMOUNT
   );
+  await approveTxn.wait();
 
   // console.log(
   //   await wethToken.allowance(owner.address, tournamentFactory.address)

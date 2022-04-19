@@ -6,11 +6,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./Tournament.sol";
 //import "./interfaces/IERC20.sol";
-//import "./interfaces/IPool.sol";
-//import "./interfaces/IPoolAddressesProvider.sol";
+import "./interfaces/IPool.sol";
+import "./interfaces/IPoolAddressesProvider.sol";
 import "./interfaces/IWeth.sol";
-import "./aave/v2/ILendingPool.sol";
-import "./aave/v2/ILendingPoolAddressesProvider.sol";
+
+//import "./aave/v2/ILendingPool.sol";
+//import "./aave/v2/ILendingPoolAddressesProvider.sol";
 
 contract CreateTournamentFactory is Ownable {
     Tournament[] public tournamentsArray;
@@ -50,14 +51,10 @@ contract CreateTournamentFactory is Ownable {
         onlyOwner
     {
         lendingPoolAddressProvider = _lendingPoolAddressProvider;
-        lendingPoolAddress = ILendingPoolAddressesProvider(
-            _lendingPoolAddressProvider
-        ).getLendingPool();
-        dataProvider = ILendingPoolAddressesProvider(
-            _lendingPoolAddressProvider
-        ).getAddress(
-                0x0100000000000000000000000000000000000000000000000000000000000000
-            );
+        lendingPoolAddress = IPoolAddressesProvider(_lendingPoolAddressProvider)
+            .getPool();
+        dataProvider = IPoolAddressesProvider(_lendingPoolAddressProvider)
+            .getPoolDataProvider();
     }
 
     function getLendingPoolAddressProvider()
@@ -161,7 +158,7 @@ contract CreateTournamentFactory is Ownable {
             //         0
             //     );
 
-            ILendingPool(lendingPoolAddress).deposit(
+            IPool(lendingPoolAddress).supply(
                 _asset,
                 _initial_invested_amount,
                 address(tournament),

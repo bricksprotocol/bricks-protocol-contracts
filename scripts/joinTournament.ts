@@ -4,7 +4,7 @@ import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0xda8D72c67A543B1F5177d411D94d5fC7CBB817Cf";
+const tournamentAddress = "0xfdA75ABc927aeD011Cd16B5F0D1C702A9123D4d1";
 const token = config.mumbaiTest.usdtToken;
 const aToken = config.mumbaiTest.ausdtToken;
 
@@ -19,11 +19,13 @@ async function main() {
   const daiToken = new ethers.Contract(token, usdcAbi, owner);
   ENTRY_FEES = 6 * 10 ** 6;
 
-  await daiToken.approve(
+  const approveTxn = await daiToken.approve(
     tournamentAddress,
     // ethers.utils.parseEther("0.001")
     ethers.BigNumber.from(ENTRY_FEES).toString()
   );
+
+  await approveTxn.wait();
 
   const firstAddressTournamentEntry = await tournament.joinTournament();
   await firstAddressTournamentEntry.wait();
