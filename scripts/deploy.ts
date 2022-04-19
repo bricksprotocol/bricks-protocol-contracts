@@ -13,7 +13,8 @@ import { makeTransferProxyAdminOwnership } from "@openzeppelin/hardhat-upgrades/
 const ETHERSCAN_TX_URL = "https://kovan.etherscan.io/tx/";
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
 let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
-
+const token = config.mumbaiTest.usdtToken;
+const aToken = config.mumbaiTest.ausdtToken;
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
@@ -25,12 +26,19 @@ async function main() {
   const [owner, secondOwner] = await ethers.getSigners();
   console.log("Owner", owner.address);
 
-  const lendingPoolProviderAddress = config.kovan.lendingPoolAddressesProvider;
+  const lendingPoolProviderAddress =
+    config.mumbaiTest.lendingPoolAddressesProvider;
   // We get the contract to deploy
   const createTournamentFactory = await ethers.getContractFactory(
     "CreateTournamentFactory"
   );
 
+  // const verifyContractFactory = await ethers.getContractFactory("Verify");
+  // const verifyFactory = await verifyContractFactory.connect(owner).deploy();
+
+  // await verifyFactory.connect(owner).deployed();
+
+  // console.log("Verify address ", verifyFactory.address);
   const provider = await new ethers.providers.JsonRpcProvider(
     process.env.RPC_ENDPOINT
   );
@@ -39,7 +47,7 @@ async function main() {
 
   //const wethToken = new ethers.Contract(config.kovan.wethToken, wethAbi, owner);
 
-  const daiToken = new ethers.Contract(config.kovan.daiToken, usdcAbi, owner);
+  const daiToken = new ethers.Contract(token, usdcAbi, owner);
   const tournamentFactory = await createTournamentFactory
     .connect(owner)
     .deploy();
@@ -62,20 +70,32 @@ async function main() {
     .setLendingPoolAddressProvider(lendingPoolProviderAddress);
   await transaction.wait();
 
+  // const verificationTransaction = await tournamentFactory
+  //   .connect(owner)
+  //   .setVerificationAddress(verifyFactory.address);
+  // await verificationTransaction.wait();
+
   console.log(
     "Lending Address",
     await tournamentFactory.getLendingPoolAddressProvider()
   );
   // const options = { value: ethers.utils.parseEther("0.001") };
-  await tournamentFactory.connect(owner).createTournamentPool(
-    "URI",
-    1650011248,
-    1650011596,
-    ENTRY_FEES,
-    config.kovan.daiToken,
-    INITIAL_INVESTED_AMOUNT
-    // options
-  );
+  ENTRY_FEES = 5 * 10 ** 6;
+  INITIAL_INVESTED_AMOUNT = 50 * 10 ** 6;
+  const createPoolTxn = await tournamentFactory
+    .connect(owner)
+    .createTournamentPool(
+      "URI",
+      1650011248,
+      1650011596,
+      ENTRY_FEES,
+      token,
+      INITIAL_INVESTED_AMOUNT,
+      aToken
+      // options
+    );
+
+  await createPoolTxn.wait();
 
   // console.log("created");
   // // const firstAddressInitialBalance = await wethToken.balanceOf(owner.address);
@@ -87,11 +107,8 @@ async function main() {
     .connect(owner)
     .tournamentsArray(0);
   console.log("Adress", tournamentAddress);
-  const tournament = await (
-    await ethers.getContractFactory("Tournament")
-  ).attach(await tournamentFactory.tournamentsArray(0));
 
-  const adaiToken = new ethers.Contract(config.kovan.adaiToken, usdcAbi, owner);
+  const adaiToken = new ethers.Contract(aToken, usdcAbi, owner);
 
   console.log(
     "Tournament Balance ",

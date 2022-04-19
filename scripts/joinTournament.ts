@@ -4,7 +4,10 @@ import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0xB01290cf052bEfcf619E2242bFB2Dfc04664C654";
+const tournamentAddress = "0xda8D72c67A543B1F5177d411D94d5fC7CBB817Cf";
+const token = config.mumbaiTest.usdtToken;
+const aToken = config.mumbaiTest.ausdtToken;
+
 async function main() {
   await run("compile");
 
@@ -13,7 +16,9 @@ async function main() {
 
   const [owner, secondOwner] = await ethers.getSigners();
   console.log("Owner", owner.address, secondOwner.address);
-  const daiToken = new ethers.Contract(config.kovan.daiToken, usdcAbi, owner);
+  const daiToken = new ethers.Contract(token, usdcAbi, owner);
+  ENTRY_FEES = 6 * 10 ** 6;
+
   await daiToken.approve(
     tournamentAddress,
     // ethers.utils.parseEther("0.001")

@@ -45,4 +45,16 @@ export const config = {
     lendingPoolAddressesProvider: "0x178113104fEcbcD7fF8669a0150721e231F0FD4B",
     daiToken: "0x6b175474e89094c44da98b954eedeac495271d0f",
   },
+  mumbaiTest: {
+    aWethTokenAddress: "0x3C68CE8504087f89c640D02d133646d98e64ddd9",
+    wethGatewayAave: "0xee9eE614Ad26963bEc1Bec0D2c92879ae1F209fA",
+    wethToken: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
+    lendingPoolAddressesProvider: "0x178113104fEcbcD7fF8669a0150721e231F0FD4B",
+    daiToken: "0x001B3B4d0F3714Ca98ba10F6042DaEbF0B1B7b6F",
+    adaiToken: "0x639cB7b21ee2161DF9c882483C9D55c90c20Ca3e",
+    usdcToken: "0x2058A9D7613eEE744279e3856Ef0eAda5FCbaA7e",
+    ausdcToken: "0x2271e3Fef9e15046d09E1d78a8FF038c691E9Cf9",
+    usdtToken: "0xBD21A10F619BE90d6066c941b04e340841F1F989",
+    ausdtToken: "0xF8744C0bD8C7adeA522d6DDE2298b17284A79D1b",
+  },
 };

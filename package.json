@@ -13,11 +13,13 @@
     "block-number": "npx hardhat block-number",
     "deploy": "npx hardhat run scripts/deploy.ts",
     "kovan": "npx hardhat run scripts/deploy.ts --network kovan",
-    "rinkeby": "npx hardhat run scripts/deploy.ts --network rinkeby",
-    "joinTournament": "npx hardhat run scripts/joinTournament.ts --network kovan",
-    "joinTournament2": "npx hardhat run scripts/joinTournament2.ts --network kovan",
-    "withdrawTournament": "npx hardhat run scripts/withdrawTournmant.ts --network kovan",
     "matic": "npx hardhat run scripts/deploy.ts --network matic",
+    "rinkeby": "npx hardhat run scripts/deploy.ts --network rinkeby",
+    "joinTournament": "npx hardhat run scripts/joinTournament.ts --network matic",
+    "joinTournament2": "npx hardhat run scripts/joinTournament2.ts --network matic",
+    "withdrawTournament": "npx hardhat run scripts/withdrawTournament.ts --network matic",
+    "withdrawTournament2": "npx hardhat run scripts/withdrawTournament2.ts --network matic",
+    "assetBalance": "npx hardhat run scripts/assetBalance.ts --network matic",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
     "account": "npx hardhat accounts",
@@ -54,6 +56,7 @@
   "dependencies": {
     "@chainlink/contracts": "^0.4.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
+    "eth-crypto": "^2.2.0",
     "web3": "^1.7.3"
   }
 }

@@ -8,10 +8,15 @@ import "./interfaces/IWethGateway.sol";
 //import "./interfaces/IPool.sol";
 import "./aave/v2/ILendingPool.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+//import "./libraries/Verify.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 //import "./interfaces/IERC20.sol";
 
 contract Tournament is Ownable {
+    using ECDSA for bytes32;
+
     enum ParticipantType {
         CREATOR,
         PARTICIPANT,
@@ -44,6 +49,8 @@ contract Tournament is Ownable {
     uint256 private fee;
     address public linkTokenAddress;
     uint256 totalWithdrawnAmount = 0;
+    address private verificationAddress;
+    address private aAssetAddress;
 
     // custom variables for testing only
     uint256 public fraction;
@@ -66,6 +73,10 @@ contract Tournament is Ownable {
     //     //setChainlinkOracle(_oracle);
     // }
 
+    constructor(address _verificationAddress) {
+        verificationAddress = _verificationAddress;
+    }
+
     // @dev tournamentURI will contain all the details pertaining to an tournament
     // {"name": "tournament_name", "description" : "tournament_description", "trading_assets": [], "image": "image_url"}
     function createPool(
@@ -78,7 +89,8 @@ contract Tournament is Ownable {
         address _asset,
         uint256 _initial_invested_amount,
         uint256 _protocolFees,
-        address _sender
+        address _sender,
+        address _aAssetAddress
     ) public {
         // require(
         //     _tournamentStart >= block.timestamp,
@@ -98,6 +110,7 @@ contract Tournament is Ownable {
         dataProvider = _dataProvider;
         protocolFees = _protocolFees;
         initialVestedAmount = _initial_invested_amount;
+        aAssetAddress = _aAssetAddress;
     }
 
     // function changeTournamentURI(string memory _tournamentURI)
@@ -170,7 +183,9 @@ contract Tournament is Ownable {
     }
 
     // dummy funtion to withdraw funds, not to be used for production
-    function withdrawFunds(uint256 withdrawPercentage) public {
+    function withdrawFunds(uint256 withdrawPercentage, bytes memory sig)
+        public
+    {
         // IERC20 ierc20 = IERC20(_aave_asset);
         // uint256 balance = ierc20.balanceOf(address(this));
         // ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
@@ -207,6 +222,12 @@ contract Tournament is Ownable {
         // }
         // withdrawEntryFees();
 
+        //Verify verify = Verify(verificationAddress);
+
+        require(
+            verifyMessage(Strings.toString(withdrawPercentage), sig),
+            "Couldn't verify identity"
+        );
         if (msg.sender == creator) {
             withdrawInitialVestedAmount();
         }
@@ -294,7 +315,7 @@ contract Tournament is Ownable {
 
     function withdrawEntryFeesWithRewards(uint256 rewardsPercentage) public {
         if (tournamentEntryFees > 0) {
-            ERC20 ierc20 = ERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
+            ERC20 ierc20 = ERC20(aAssetAddress);
             uint256 totalParticipantFees = tournamentEntryFees *
                 participants.length;
             uint256 rewards = (ierc20.balanceOf(address(this)) +
@@ -374,5 +395,26 @@ contract Tournament is Ownable {
 
     function getData() public view returns (string memory) {
         return data;
+    }
+
+    function verifyMessage(string memory message, bytes memory signature)
+        public
+        view
+        returns (bool)
+    {
+        //hash the plain text message
+        bytes32 messagehash = keccak256(bytes(message));
+
+        address signeraddress = messagehash.toEthSignedMessageHash().recover(
+            signature
+        );
+
+        if (msg.sender == signeraddress) {
+            //The message is authentic
+            return true;
+        } else {
+            //msg.sender didnt sign this message.
+            return false;
+        }
     }
 }

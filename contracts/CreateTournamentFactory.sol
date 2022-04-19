@@ -25,7 +25,7 @@ contract CreateTournamentFactory is Ownable {
     address linkTokenAddress;
     uint256 linkFundValue;
     uint256 public protocolFees; // 10% - 1000 (support upto 2 decimal places)
-
+    address private verifySignatureAddress;
     address private oracle;
     bytes32 private jobId;
     uint256 private fee;
@@ -36,6 +36,13 @@ contract CreateTournamentFactory is Ownable {
 
     function setProtocolFees(uint256 _protocolFees) public onlyOwner {
         protocolFees = _protocolFees;
+    }
+
+    function setVerificationAddress(address _verifySignatureAddress)
+        public
+        onlyOwner
+    {
+        verifySignatureAddress = _verifySignatureAddress;
     }
 
     function setLendingPoolAddressProvider(address _lendingPoolAddressProvider)
@@ -101,11 +108,12 @@ contract CreateTournamentFactory is Ownable {
         uint256 _tournamentEnd,
         uint256 _tournamentEntryFees,
         address _asset,
-        uint256 _initial_invested_amount
+        uint256 _initial_invested_amount,
+        address _aAssetAddress
     ) public {
         ierc20 = ERC20(_asset);
         //iweth = IWeth(_asset);
-        Tournament tournament = new Tournament();
+        Tournament tournament = new Tournament(verifySignatureAddress);
         tournamentsArray.push(tournament);
         tournamentsMapping[address(tournament)] = true;
         tournament.createPool({
@@ -118,7 +126,8 @@ contract CreateTournamentFactory is Ownable {
             _asset: _asset,
             _initial_invested_amount: _initial_invested_amount,
             _protocolFees: protocolFees,
-            _sender: msg.sender
+            _sender: msg.sender,
+            _aAssetAddress: _aAssetAddress
         });
         if (_initial_invested_amount != 0) {
             // require(
