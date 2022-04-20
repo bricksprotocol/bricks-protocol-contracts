@@ -11,10 +11,10 @@ import usdcAbi from "../abis/usdc.json";
 import adaiAbi from "../abis/adai.json";
 import { makeTransferProxyAdminOwnership } from "@openzeppelin/hardhat-upgrades/dist/admin";
 const ETHERSCAN_TX_URL = "https://kovan.etherscan.io/tx/";
-let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
-const token = config.mumbaiTest.usdtToken;
-const aToken = config.mumbaiTest.ausdtToken;
+let ENTRY_FEES: any = Web3.utils.toWei("0.001", "ether");
+let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("0.01", "ether");
+const token = config.mumbaiTest.wmaticToken;
+const aToken = config.mumbaiTest.aWmaticToken;
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
@@ -80,9 +80,9 @@ async function main() {
     "Lending Address",
     await tournamentFactory.getLendingPoolAddressProvider()
   );
-  // const options = { value: ethers.utils.parseEther("0.001") };
-  ENTRY_FEES = 5 * 10 ** 6;
-  INITIAL_INVESTED_AMOUNT = 50 * 10 ** 6;
+  const options = { value: ethers.utils.parseEther("0.01") };
+  // ENTRY_FEES = 0.01 * 10 ** 8;
+  //INITIAL_INVESTED_AMOUNT = 0.1 * 10 ** 8;
   const createPoolTxn = await tournamentFactory
     .connect(owner)
     .createTournamentPool(
@@ -92,8 +92,9 @@ async function main() {
       ENTRY_FEES,
       token,
       INITIAL_INVESTED_AMOUNT,
-      aToken
-      // options
+      aToken,
+      true,
+      options
     );
 
   await createPoolTxn.wait();

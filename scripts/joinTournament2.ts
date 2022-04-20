@@ -3,10 +3,10 @@ import { config } from "../config";
 import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
-let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0xfdA75ABc927aeD011Cd16B5F0D1C702A9123D4d1";
-const token = config.mumbaiTest.usdtToken;
-const aToken = config.mumbaiTest.ausdtToken;
+let ENTRY_FEES: any = Web3.utils.toWei("0.001", "ether");
+const tournamentAddress = "0x20091649CD716f403497fbf00778586267eDeF80";
+const token = config.mumbaiTest.wmaticToken;
+const aToken = config.mumbaiTest.aWmaticToken;
 
 async function main() {
   await run("compile");
@@ -17,7 +17,7 @@ async function main() {
   const [owner, secondOwner] = await ethers.getSigners();
   console.log("Owner", owner.address, secondOwner.address);
   const daiToken = new ethers.Contract(token, usdcAbi, secondOwner);
-  ENTRY_FEES = 6 * 10 ** 6;
+  //ENTRY_FEES = 0.01 * 10 ** 8;
 
   const approveTxn = await daiToken.approve(
     tournamentAddress,
@@ -36,10 +36,11 @@ async function main() {
   //   // ethers.utils.parseEther("0.001")
   //   ENTRY_FEES
   // );
+  const options = { value: ethers.utils.parseEther("0.001") };
 
   const secondAddressTournamentEntry = await tournament
     .connect(secondOwner)
-    .joinTournament();
+    .joinTournament(options);
   await secondAddressTournamentEntry.wait();
 
   //   const provider = await new ethers.providers.JsonRpcProvider(

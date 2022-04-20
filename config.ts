@@ -46,9 +46,11 @@ export const config = {
     daiToken: "0x6b175474e89094c44da98b954eedeac495271d0f",
   },
   mumbaiTest: {
-    aWethTokenAddress: "0x3C68CE8504087f89c640D02d133646d98e64ddd9",
+    aWethTokenAddress: "0x685bF4eab23993E94b4CFb9383599c926B66cF57",
     wethGatewayAave: "0xee9eE614Ad26963bEc1Bec0D2c92879ae1F209fA",
-    wethToken: "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889",
+    wethToken: "0xd575d4047f8c667E064a4ad433D04E25187F40BB",
+    wbtcToken: "0x85E44420b6137bbc75a85CAB5c9A3371af976FdE",
+    aWbtcToken: "0xde230bC95a03b695be69C44b9AA6C0e9dAc1B143",
     lendingPoolAddressesProvider: "0x5343b5bA672Ae99d627A1C87866b8E53F47Db2E6",
     daiToken: "0x9A753f0F7886C9fbF63cF59D0D4423C5eFaCE95B",
     adaiToken: "0xDD4f3Ee61466C4158D394d57f3D4C397E91fBc51",
@@ -56,5 +58,7 @@ export const config = {
     ausdcToken: "0xCdc2854e97798AfDC74BC420BD5060e022D14607",
     usdtToken: "0x21C561e551638401b937b03fE5a0a0652B99B7DD",
     ausdtToken: "0x6Ca4abE253bd510fCA862b5aBc51211C1E1E8925",
+    aWmaticToken: "0x89a6AE840b3F8f489418933A220315eeA36d11fF",
+    wmaticToken: "0xb685400156cF3CBE8725958DeAA61436727A30c3",
   },
 };

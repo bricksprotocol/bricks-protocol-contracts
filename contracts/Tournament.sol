@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 //import "./libraries/Verify.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./interfaces/IWethGateway.sol";
 
 //import "./interfaces/IERC20.sol";
 
@@ -51,6 +52,7 @@ contract Tournament is Ownable {
     uint256 totalWithdrawnAmount = 0;
     address private verificationAddress;
     address private aAssetAddress;
+    bool private isNativeAsset;
 
     // custom variables for testing only
     uint256 public fraction;
@@ -90,7 +92,8 @@ contract Tournament is Ownable {
         uint256 _initial_invested_amount,
         uint256 _protocolFees,
         address _sender,
-        address _aAssetAddress
+        address _aAssetAddress,
+        bool _isNativeAsset
     ) public {
         // require(
         //     _tournamentStart >= block.timestamp,
@@ -111,6 +114,7 @@ contract Tournament is Ownable {
         protocolFees = _protocolFees;
         initialVestedAmount = _initial_invested_amount;
         aAssetAddress = _aAssetAddress;
+        isNativeAsset = _isNativeAsset;
     }
 
     // function changeTournamentURI(string memory _tournamentURI)
@@ -146,7 +150,7 @@ contract Tournament is Ownable {
         );
     }
 
-    function joinTournament() public {
+    function joinTournament() public payable {
         // check if the values match
         ERC20 ierc20 = ERC20(asset);
         uint256 balance = ierc20.balanceOf(msg.sender);
@@ -161,20 +165,28 @@ contract Tournament is Ownable {
         );
 
         if (tournamentEntryFees != 0) {
-            require(
-                ierc20.transferFrom(
-                    msg.sender,
+            if (isNativeAsset) {
+                IWethGateway(asset).depositETH(
+                    lending_pool_address,
                     address(this),
-                    tournamentEntryFees
-                )
-            );
-            ierc20.approve(lending_pool_address, tournamentEntryFees);
-            IPool(lending_pool_address).supply(
-                asset,
-                tournamentEntryFees,
-                address(this),
-                0
-            );
+                    0
+                );
+            } else {
+                require(
+                    ierc20.transferFrom(
+                        msg.sender,
+                        address(this),
+                        tournamentEntryFees
+                    )
+                );
+                ierc20.approve(lending_pool_address, tournamentEntryFees);
+                IPool(lending_pool_address).supply(
+                    asset,
+                    tournamentEntryFees,
+                    address(this),
+                    0
+                );
+            }
         }
         participantFees[msg.sender] = true;
         participants.push(payable(msg.sender));
@@ -257,12 +269,21 @@ contract Tournament is Ownable {
             !initialVestedRefund &&
             initialVestedAmount > 0
         ) {
-            //ierc20.approve(msg.sender, initialVestedAmount);
-            IPool(lending_pool_address).withdraw(
-                address(asset),
-                initialVestedAmount,
-                msg.sender
-            );
+            if (isNativeAsset) {
+                IWethGateway(0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17)
+                    .withdrawETH(
+                        lending_pool_address,
+                        initialVestedAmount,
+                        msg.sender
+                    );
+            } else {
+                //ierc20.approve(msg.sender, initialVestedAmount);
+                IPool(lending_pool_address).withdraw(
+                    address(asset),
+                    initialVestedAmount,
+                    msg.sender
+                );
+            }
             initialVestedRefund = true;
             totalWithdrawnAmount += initialVestedAmount;
             emit withdraw(msg.sender, initialVestedAmount);
@@ -323,11 +344,20 @@ contract Tournament is Ownable {
                 (totalParticipantFees + initialVestedAmount);
             uint256 amountToWithdraw = tournamentEntryFees +
                 ((rewardsPercentage * rewards) / 100);
-            IPool(lending_pool_address).withdraw(
-                address(asset),
-                amountToWithdraw,
-                msg.sender
-            );
+            if (isNativeAsset) {
+                IWethGateway(0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17)
+                    .withdrawETH(
+                        lending_pool_address,
+                        amountToWithdraw,
+                        msg.sender
+                    );
+            } else {
+                IPool(lending_pool_address).withdraw(
+                    address(asset),
+                    amountToWithdraw,
+                    msg.sender
+                );
+            }
             totalWithdrawnAmount += amountToWithdraw;
             emit withdraw(msg.sender, amountToWithdraw);
             emit InitiateWithdraw(msg.sender, amountToWithdraw);

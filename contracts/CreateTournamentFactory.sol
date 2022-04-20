@@ -106,8 +106,9 @@ contract CreateTournamentFactory is Ownable {
         uint256 _tournamentEntryFees,
         address _asset,
         uint256 _initial_invested_amount,
-        address _aAssetAddress
-    ) public {
+        address _aAssetAddress,
+        bool _isNativeAsset
+    ) public payable {
         ierc20 = ERC20(_asset);
         //iweth = IWeth(_asset);
         Tournament tournament = new Tournament(verifySignatureAddress);
@@ -124,7 +125,8 @@ contract CreateTournamentFactory is Ownable {
             _initial_invested_amount: _initial_invested_amount,
             _protocolFees: protocolFees,
             _sender: msg.sender,
-            _aAssetAddress: _aAssetAddress
+            _aAssetAddress: _aAssetAddress,
+            _isNativeAsset: _isNativeAsset
         });
         if (_initial_invested_amount != 0) {
             // require(
@@ -136,34 +138,40 @@ contract CreateTournamentFactory is Ownable {
             // );
             // ierc20.approve(address(tournament), 10**6);
 
-            require(
-                ierc20.transferFrom(
-                    msg.sender,
-                    address(this),
-                    _initial_invested_amount
-                ),
-                "USDC Transfer failed!"
-            );
             // ierc20.approve(
             //     lendingPoolAddressProvider,
             //     _initial_invested_amount
             // );
-            ierc20.approve(lendingPoolAddress, _initial_invested_amount);
 
-            // IPool(IPoolAddressesProvider(lendingPoolAddressProvider).getPool())
-            //     .supply(
-            //         0xe22da380ee6B445bb8273C81944ADEB6E8450422,
-            //         500 * 10**6,
-            //         msg.sender,
-            //         0
-            //     );
+            if (_isNativeAsset) {
+                IWethGateway(0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17)
+                    .depositETH(lendingPoolAddress, address(tournament), 0);
+            } else {
+                require(
+                    ierc20.transferFrom(
+                        msg.sender,
+                        address(this),
+                        _initial_invested_amount
+                    ),
+                    "USDC Transfer failed!"
+                );
+                ierc20.approve(lendingPoolAddress, _initial_invested_amount);
 
-            IPool(lendingPoolAddress).supply(
-                _asset,
-                _initial_invested_amount,
-                address(tournament),
-                0
-            );
+                // IPool(IPoolAddressesProvider(lendingPoolAddressProvider).getPool())
+                //     .supply(
+                //         0xe22da380ee6B445bb8273C81944ADEB6E8450422,
+                //         500 * 10**6,
+                //         msg.sender,
+                //         0
+                //     );
+
+                IPool(lendingPoolAddress).supply(
+                    _asset,
+                    _initial_invested_amount,
+                    address(tournament),
+                    0
+                );
+            }
 
             // IWethGateway(0x509B2506FbA1BD41765F6A82C7B0Dd4229191768).depositETH(
             //         IPoolAddressesProvider(lendingPoolAddressProvider)
