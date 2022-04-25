@@ -2,7 +2,8 @@
 pragma solidity >=0.6.12;
 
 import {IPoolAddressesProvider} from "./IPoolAddressesProvider.sol";
-import {DataTypes} from "../libraries/DataTypes.sol";
+//import {DataTypes} from "../libraries/DataTypes.sol";
+import {DataTypes} from "@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol";
 
 /**
  * @title IPool

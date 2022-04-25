@@ -5,6 +5,17 @@ __metadata:
   version: 5
   cacheKey: 8
 
+"@aave/core-v3@npm:^1.13.1":
+  version: 1.13.1
+  resolution: "@aave/core-v3@npm:1.13.1"
+  dependencies:
+    "@nomiclabs/hardhat-etherscan": ^2.1.7
+    axios-curlirize: ^1.3.7
+    tmp-promise: ^3.0.2
+  checksum: 0aa56069b0420cfdbd6c7357f4a460e94b926da8c6bb759b47f7b30b0a2617c2399643024b5a110f1d6a2fb42bc9b5b6d0299cb6badb9e43091e9e8adc0d5954
+  languageName: node
+  linkType: hard
+
 "@babel/runtime@npm:7.16.7":
   version: 7.16.7
   resolution: "@babel/runtime@npm:7.16.7"
@@ -1102,7 +1113,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nomiclabs/hardhat-etherscan@npm:^2.1.2":
+"@nomiclabs/hardhat-etherscan@npm:^2.1.2, @nomiclabs/hardhat-etherscan@npm:^2.1.7":
   version: 2.1.8
   resolution: "@nomiclabs/hardhat-etherscan@npm:2.1.8"
   dependencies:
@@ -2218,6 +2229,13 @@ __metadata:
   version: 1.11.0
   resolution: "aws4@npm:1.11.0"
   checksum: 5a00d045fd0385926d20ebebcfba5ec79d4482fe706f63c27b324d489a04c68edb0db99ed991e19eda09cb8c97dc2452059a34d97545cebf591d7a2b5a10999f
+  languageName: node
+  linkType: hard
+
+"axios-curlirize@npm:^1.3.7":
+  version: 1.3.7
+  resolution: "axios-curlirize@npm:1.3.7"
+  checksum: 131b13c9675e448f93db2d18afbf76cd59c730bfcded2f2dc26f31e98f690f4aeb358ccbb62573e63e58bf7ed9173762e3b4fc3910c1553bb97cf7256386a14f
   languageName: node
   linkType: hard
 
@@ -10102,7 +10120,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rimraf@npm:^3.0.2":
+"rimraf@npm:^3.0.0, rimraf@npm:^3.0.2":
   version: 3.0.2
   resolution: "rimraf@npm:3.0.2"
   dependencies:
@@ -11267,6 +11285,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tmp-promise@npm:^3.0.2":
+  version: 3.0.3
+  resolution: "tmp-promise@npm:3.0.3"
+  dependencies:
+    tmp: ^0.2.0
+  checksum: f854f5307dcee6455927ec3da9398f139897faf715c5c6dcee6d9471ae85136983ea06662eba2edf2533bdcb0fca66d16648e79e14381e30c7fb20be9c1aa62c
+  languageName: node
+  linkType: hard
+
 "tmp@npm:0.0.33, tmp@npm:^0.0.33":
   version: 0.0.33
   resolution: "tmp@npm:0.0.33"
@@ -11282,6 +11309,15 @@ __metadata:
   dependencies:
     rimraf: ^2.6.3
   checksum: 6bab8431de9d245d4264bd8cd6bb216f9d22f179f935dada92a11d1315572c8eb7c3334201e00594b4708608bd536fad3a63bfb037e7804d827d66aa53a1afcd
+  languageName: node
+  linkType: hard
+
+"tmp@npm:^0.2.0":
+  version: 0.2.1
+  resolution: "tmp@npm:0.2.1"
+  dependencies:
+    rimraf: ^3.0.0
+  checksum: 8b1214654182575124498c87ca986ac53dc76ff36e8f0e0b67139a8d221eaecfdec108c0e6ec54d76f49f1f72ab9325500b246f562b926f85bcdfca8bf35df9e
   languageName: node
   linkType: hard
 
@@ -11623,6 +11659,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "typescript-hardhat@workspace:."
   dependencies:
+    "@aave/core-v3": ^1.13.1
     "@chainlink/contracts": ^0.4.0
     "@nomiclabs/hardhat-ethers": ^2.0.2
     "@nomiclabs/hardhat-etherscan": ^2.1.2

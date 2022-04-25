@@ -3,10 +3,10 @@ import { config } from "../config";
 import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
-let ENTRY_FEES: any = Web3.utils.toWei("0.001", "ether");
-const tournamentAddress = "0x20091649CD716f403497fbf00778586267eDeF80";
-const token = config.mumbaiTest.wmaticToken;
-const aToken = config.mumbaiTest.aWmaticToken;
+let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
+const tournamentAddress = "0xe9f29697823614a94d7fe930BC3d908Df1676873";
+const token = config.mumbaiTest.daiToken;
+const aToken = config.mumbaiTest.adaiToken;
 
 async function main() {
   await run("compile");
@@ -36,11 +36,11 @@ async function main() {
   //   // ethers.utils.parseEther("0.001")
   //   ENTRY_FEES
   // );
-  const options = { value: ethers.utils.parseEther("0.001") };
+  //const options = { value: ENTRY_FEES };
 
   const secondAddressTournamentEntry = await tournament
     .connect(secondOwner)
-    .joinTournament(options);
+    .joinTournament();
   await secondAddressTournamentEntry.wait();
 
   //   const provider = await new ethers.providers.JsonRpcProvider(

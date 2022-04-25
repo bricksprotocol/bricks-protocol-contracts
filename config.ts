@@ -2,7 +2,7 @@ export const config = {
   kovan: {
     aWethTokenAddress: "0xec6E5B3Bd3e8CC74756Af812994361d8D1EF30F8",
     wethGatewayAave: "0x509B2506FbA1BD41765F6A82C7B0Dd4229191768",
-    wethToken: "0xd0a1e359811322d97991e03f863a0c30c2cf029c",
+    wethToken: "0xF1bE881Ee7034ebC0CD47E1af1bA94EC30DF3583",
     lendingPoolAddressesProvider: "0x88757f2f99175387ab4c6a4b3067c77a695b0349",
     daiToken: "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
     adaiToken: "0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8",

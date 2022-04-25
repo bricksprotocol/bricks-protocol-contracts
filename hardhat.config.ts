@@ -35,14 +35,12 @@ const config: HardhatUserConfig = {
     matic: {
       url: "https://rpc-mumbai.maticvigil.com",
       accounts: [privateKey!, secondPvtKey!],
-      gas: "auto",
-      gasPrice: "auto",
     },
   },
   solidity: {
     compilers: [
       {
-        version: "0.8.4",
+        version: "0.8.10",
         settings: {
           optimizer: {
             enabled: true,
@@ -53,12 +51,18 @@ const config: HardhatUserConfig = {
       {
         version: "0.6.12",
       },
-      {
-        version: "^0.8.7",
-      },
-      {
-        version: "^0.4.0",
-      },
+      // {
+      //   version: "0.8.10",
+      //   settings: {
+      //     optimizer: {
+      //       enabled: true,
+      //       runs: 200,
+      //       details: {
+      //         yul: false,
+      //       },
+      //     },
+      //   },
+      // },
     ],
   },
   mocha: {

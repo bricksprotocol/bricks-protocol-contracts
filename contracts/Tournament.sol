@@ -1,28 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.6.0;
+pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-//import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-//import "./interfaces/IProtocolDataProvider.sol";
-import "./interfaces/IWethGateway.sol";
-import "./interfaces/IPool.sol";
-//Simport "./aave/v2/ILendingPool.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-//import "./libraries/Verify.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./interfaces/IWethGateway.sol";
-
-//import "./interfaces/IERC20.sol";
+import "./WETHGateway.sol";
 
 contract Tournament is Ownable {
     using ECDSA for bytes32;
 
-    enum ParticipantType {
-        CREATOR,
-        PARTICIPANT,
-        BOTH
-    }
+    // enum ParticipantType {
+    //     CREATOR,
+    //     PARTICIPANT,
+    //     BOTH
+    // }
     event ParticipantJoined(address indexed participant, uint256 entryFees);
     event withdraw(address indexed participant, uint256 amount);
 
@@ -36,28 +26,27 @@ contract Tournament is Ownable {
     uint256 public tournamentEnd;
     uint256 public tournamentEntryFees;
     uint256 public initialVestedAmount;
-    bool internal initialVestedRefund = false;
+    //bool internal initialVestedRefund = false;
     address payable[] public participants;
     mapping(address => bool) public participantFees;
     address public creator;
     address public asset;
     address public lending_pool_address;
-    mapping(bytes32 => address) requestMapping;
-    address dataProvider;
+    //mapping(bytes32 => address) requestMapping;
     uint256 public protocolFees;
-    address private oracle;
-    bytes32 private jobId;
-    uint256 private fee;
-    address public linkTokenAddress;
+    //address private oracle;
+    //bytes32 private jobId;
+    //uint256 private fee;
+    // address public linkTokenAddress;
     uint256 totalWithdrawnAmount = 0;
-    address private verificationAddress;
+    // address private verificationAddress;
     address private aAssetAddress;
     bool private isNativeAsset;
-
+    uint256 public _allowance;
     // custom variables for testing only
-    uint256 public fraction;
-    string public data;
-    uint256 private finalAmount;
+    // uint256 public fraction;
+    // string public data;
+    //  uint256 private finalAmount;
     mapping(address => bool) public participantWithdrawnStatus;
 
     // // initializing oracle, jobid and fee for the required network
@@ -75,8 +64,8 @@ contract Tournament is Ownable {
     //     //setChainlinkOracle(_oracle);
     // }
 
-    constructor(address _verificationAddress) {
-        verificationAddress = _verificationAddress;
+    constructor() {
+        //  verificationAddress = _verificationAddress;
     }
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
@@ -95,10 +84,10 @@ contract Tournament is Ownable {
         address _aAssetAddress,
         bool _isNativeAsset
     ) public {
-        // require(
-        //     _tournamentStart >= block.timestamp,
-        //     "Start time has already passed!"
-        // );
+        require(
+            _tournamentStart >= block.timestamp,
+            "Start time has already passed!"
+        );
         require(
             _tournamentEnd > _tournamentStart,
             "Tournament should end after start point!"
@@ -110,7 +99,6 @@ contract Tournament is Ownable {
         creator = _sender;
         asset = _asset;
         lending_pool_address = _lending_pool_address;
-        dataProvider = _dataProvider;
         protocolFees = _protocolFees;
         initialVestedAmount = _initial_invested_amount;
         aAssetAddress = _aAssetAddress;
@@ -139,21 +127,24 @@ contract Tournament is Ownable {
         )
     {
         return (
-            getCreator(),
+            creator,
             tournamentURI,
             tournamentStart,
             tournamentEnd,
             tournamentEntryFees,
             initialVestedAmount,
             asset,
-            getParticipants()
+            participants
         );
     }
 
     function joinTournament() public payable {
+        IERC20 ierc20 = IERC20(asset);
+
         // check if the values match
-        ERC20 ierc20 = ERC20(asset);
-        uint256 balance = ierc20.balanceOf(msg.sender);
+        uint256 balance = (isNativeAsset)
+            ? address(msg.sender).balance
+            : ierc20.balanceOf(msg.sender);
         require(
             balance >= tournamentEntryFees,
             "You do not have enough to join this Event"
@@ -161,12 +152,14 @@ contract Tournament is Ownable {
         // check if the participant is already registered the event
         require(
             participantFees[msg.sender] != true,
-            "The participant is already registered"
+            "Participant is already registered"
         );
 
         if (tournamentEntryFees != 0) {
             if (isNativeAsset) {
-                IWethGateway(asset).depositETH(
+                WETHGateway gateway = new WETHGateway(asset, address(this));
+                gateway.authorizePool(lending_pool_address);
+                gateway.depositETH{value: msg.value}(
                     lending_pool_address,
                     address(this),
                     0
@@ -235,10 +228,16 @@ contract Tournament is Ownable {
         // withdrawEntryFees();
 
         //Verify verify = Verify(verificationAddress);
+        require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
+
+        require(
+            !participantWithdrawnStatus[msg.sender],
+            "Participant has already withdrawn the share"
+        );
 
         require(
             verifyMessage(Strings.toString(withdrawPercentage), sig),
-            "Couldn't verify identity"
+            "Can't verify identity"
         );
         if (msg.sender == creator) {
             withdrawInitialVestedAmount();
@@ -247,96 +246,36 @@ contract Tournament is Ownable {
         if (participantFees[msg.sender]) {
             withdrawEntryFeesWithRewards(withdrawPercentage);
         }
+
+        participantWithdrawnStatus[msg.sender] = true;
     }
 
-    function getWithdrawalStatus() public view returns (bool) {
-        return participantFees[msg.sender];
-    }
+    // function getWithdrawalStatus() public view returns (bool) {
+    //     return participantFees[msg.sender];
+    // }
 
-    function getParticipants() public view returns (address payable[] memory) {
-        return participants;
-    }
+    // function getParticipants() public view returns (address payable[] memory) {
+    //     return participants;
+    // }
 
-    function getCreator() public view returns (address) {
-        return creator;
-    }
+    // function getCreator() public view returns (address) {
+    //     return creator;
+    // }
 
-    function withdrawInitialVestedAmount() internal {
+    function withdrawInitialVestedAmount() private {
         //ERC20 ierc20 = ERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
 
-        if (
-            msg.sender == creator &&
-            !initialVestedRefund &&
-            initialVestedAmount > 0
-        ) {
-            if (isNativeAsset) {
-                IWethGateway(0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17)
-                    .withdrawETH(
-                        lending_pool_address,
-                        initialVestedAmount,
-                        msg.sender
-                    );
-            } else {
-                //ierc20.approve(msg.sender, initialVestedAmount);
-                IPool(lending_pool_address).withdraw(
-                    address(asset),
-                    initialVestedAmount,
-                    msg.sender
-                );
-            }
-            initialVestedRefund = true;
+        if (msg.sender == creator && initialVestedAmount > 0) {
+            withdrawFromAave(initialVestedAmount);
             totalWithdrawnAmount += initialVestedAmount;
             emit withdraw(msg.sender, initialVestedAmount);
             emit InitiateWithdraw(msg.sender, initialVestedAmount);
         }
     }
 
-    // function withdrawEntryFees() internal returns (bytes32 requestId) {
-    //     emit InitiateWithdraw(msg.sender, 1);
-    //     Chainlink.Request memory request = buildChainlinkRequest(
-    //         jobId,
-    //         address(this),
-    //         this.fulfill.selector
-    //     );
-
-    //     // Set the URL to perform the GET request on
-    //     // request.add(
-    //     //     "get",
-    //     //     string(
-    //     //         abi.encodePacked(
-    //     //             "https://testapi.bricksprotocol.com/api/v1/contracts/fraction?user_address=",
-    //     //             toAsciiString(msg.sender),
-    //     //             "&event_address=",
-    //     //             toAsciiString(address(this))
-    //     //         )
-    //     //     )
-    //     // );
-
-    //     // request.add("path", "fractional_split");
-
-    //     // Test function
-    //     request.add(
-    //         "get",
-    //         "https://ipfs.io/ipfs/QmfDiv81deQNEGGPKPWfEmbAuu9186v3dsVBSfuLSS8iBe"
-    //     );
-
-    //     request.add("path", "value");
-
-    //     // Multiply the result by 1000000000000000000 to remove decimals
-    //     // int256 timesAmount = 10**8;
-    //     // request.addInt("times", timesAmount);
-
-    //     // Sends the request
-    //     // bytes32 requestID = sendChainlinkRequestTo(oracle, request, fee);
-    //     bytes32 requestID = sendOperatorRequest(request, fee);
-    //     requestMapping[requestID] = msg.sender;
-    //     fraction = 1;
-    //     data = "1";
-    // }
-
-    function withdrawEntryFeesWithRewards(uint256 rewardsPercentage) public {
+    function withdrawEntryFeesWithRewards(uint256 rewardsPercentage) private {
         if (tournamentEntryFees > 0) {
-            ERC20 ierc20 = ERC20(aAssetAddress);
+            IERC20 ierc20 = IERC20(aAssetAddress);
             uint256 totalParticipantFees = tournamentEntryFees *
                 participants.length;
             uint256 rewards = (ierc20.balanceOf(address(this)) +
@@ -344,87 +283,33 @@ contract Tournament is Ownable {
                 (totalParticipantFees + initialVestedAmount);
             uint256 amountToWithdraw = tournamentEntryFees +
                 ((rewardsPercentage * rewards) / 100);
-            if (isNativeAsset) {
-                IWethGateway(0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17)
-                    .withdrawETH(
-                        lending_pool_address,
-                        amountToWithdraw,
-                        msg.sender
-                    );
-            } else {
-                IPool(lending_pool_address).withdraw(
-                    address(asset),
-                    amountToWithdraw,
-                    msg.sender
-                );
-            }
+            withdrawFromAave(amountToWithdraw);
             totalWithdrawnAmount += amountToWithdraw;
             emit withdraw(msg.sender, amountToWithdraw);
             emit InitiateWithdraw(msg.sender, amountToWithdraw);
         }
     }
 
-    /**
-     * Receive the response in the form of uint256
-     */
-    // function fulfill(bytes32 _requestId, bytes memory _data)
-    //     public
-    //     recordChainlinkFulfillment(_requestId)
-    // {
-    //     // address sender = requestMapping[_requestId];
-    //     // IProtocolDataProvider provider = IProtocolDataProvider(dataProvider);
-    //     // uint256 balance;
-    //     // (balance, , , , , , , , ) = provider.getUserReserveData(
-    //     //     asset,
-    //     //     address(this)
-    //     // );
-    //     // // IERC20 ierc20 = IERC20(aave_asset_address);
-    //     // // uint256 balance = ierc20.balanceOf(address(this));
-    //     // uint256 poolinterest = balance -
-    //     //     initialVestedAmount -
-    //     //     participants.length *
-    //     //     tournamentEntryFees;
-    //     // uint256 withdrawAmount = (poolinterest * _fraction) /
-    //     //     uint256(10**8) +
-    //     //     tournamentEntryFees;
-    //     // // uint256 withdrawAmount = poolinterest * (_fraction / uint256(10**8));
-    //     // ILendingPool(lending_pool_address).withdraw(
-    //     //     asset,
-    //     //     withdrawAmount,
-    //     //     sender
-    //     // );
-    //     // participantFees[sender] = false;
-    //     data = string(_data);
-    //     // emit withdraw(sender, withdrawAmount);
-    //     // emit InitiateWithdraw(sender, withdrawAmount);
-    // }
+    function withdrawFromAave(uint256 amountToWithdraw) private {
+        if (isNativeAsset) {
+            IAToken aWETH = IAToken(aAssetAddress);
+            IERC20 ierc20 = IERC20(asset);
 
-    // functions that could be in a library
-    function toAsciiString(address x) internal pure returns (string memory) {
-        bytes memory s = new bytes(40);
-        for (uint256 i = 0; i < 20; i++) {
-            bytes1 b = bytes1(uint8(uint256(uint160(x)) / (2**(8 * (19 - i)))));
-            bytes1 hi = bytes1(uint8(b) / 16);
-            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
-            s[2 * i] = char(hi);
-            s[2 * i + 1] = char(lo);
+            WETHGateway gateway = new WETHGateway(asset, address(this));
+            gateway.authorizePool(lending_pool_address);
+            aWETH.approve(address(gateway), amountToWithdraw);
+            gateway.withdrawETH(
+                lending_pool_address,
+                amountToWithdraw,
+                msg.sender
+            );
+        } else {
+            IPool(lending_pool_address).withdraw(
+                address(asset),
+                amountToWithdraw,
+                msg.sender
+            );
         }
-        return string(s);
-    }
-
-    function char(bytes1 b) internal pure returns (bytes1 c) {
-        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
-        else return bytes1(uint8(b) + 0x57);
-    }
-
-    // custom functions for testing
-
-    function getFraction() public view returns (uint256) {
-        return fraction;
-    }
-
-    function getData() public view returns (string memory) {
-        return data;
     }
 
     function verifyMessage(string memory message, bytes memory signature)

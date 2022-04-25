@@ -5,9 +5,9 @@ import usdcAbi from "../abis/usdc.json";
 import EthCrypto from "eth-crypto";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0x20091649CD716f403497fbf00778586267eDeF80";
-const token = config.mumbaiTest.wmaticToken;
-const aToken = config.mumbaiTest.aWmaticToken;
+const tournamentAddress = "0xe9f29697823614a94d7fe930BC3d908Df1676873";
+const token = config.mumbaiTest.daiToken;
+const aToken = config.mumbaiTest.adaiToken;
 
 async function main() {
   await run("compile");
