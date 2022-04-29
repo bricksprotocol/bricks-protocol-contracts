@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity >=0.8.10;
 
-interface IWETH {
+interface IWeth {
     function deposit() external payable;
 
     function withdraw(uint256) external;

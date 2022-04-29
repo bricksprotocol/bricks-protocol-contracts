@@ -3,8 +3,8 @@ pragma solidity >=0.8.0;
 
 import {Ownable} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/Ownable.sol";
 import {IERC20} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
-import {IWETHGateway} from "./interfaces/IWETHGateway.sol";
+import {IWeth} from "./interfaces/IWeth.sol";
+import {IWETHGateway} from "./interfaces/IWethGateway.sol";
 import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 import {IAToken} from "@aave/core-v3/contracts/interfaces/IAToken.sol";
 import {ReserveConfiguration} from "@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol";
@@ -18,7 +18,7 @@ contract WETHGateway is IWETHGateway, Ownable {
 
     uint256 public _balance;
 
-    IWETH internal immutable WETH;
+    IWeth internal immutable WETH;
 
     /**
      * @dev Sets the WETH address and the PoolAddressesProvider address. Infinite approves pool.
@@ -26,7 +26,7 @@ contract WETHGateway is IWETHGateway, Ownable {
      * @param owner Address of the owner of this contract
      **/
     constructor(address weth, address owner) {
-        WETH = IWETH(weth);
+        WETH = IWeth(weth);
         transferOwnership(owner);
     }
 
