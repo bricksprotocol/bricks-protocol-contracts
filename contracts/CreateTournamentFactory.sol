@@ -61,9 +61,10 @@ contract CreateTournamentFactory is Ownable {
         address _asset,
         uint256 _initial_invested_amount,
         address _aAssetAddress,
-        bool _isNativeAsset
+        bool _isNativeAsset,
+        address _trustedForwarder
     ) public payable {
-        Tournament tournament = new Tournament();
+        Tournament tournament = new Tournament(_trustedForwarder);
         tournamentsArray.push(tournament);
         tournamentsMapping[address(tournament)] = true;
         tournament.createPool({
@@ -76,16 +77,13 @@ contract CreateTournamentFactory is Ownable {
             _asset: _asset,
             _initial_invested_amount: _initial_invested_amount,
             _protocolFees: protocolFees,
-            _sender: msg.sender,
+            _sender: _msgSender(),
             _aAssetAddress: _aAssetAddress,
             _isNativeAsset: _isNativeAsset
         });
         if (_initial_invested_amount != 0) {
             if (_isNativeAsset) {
-                WETHGateway gateway = new WETHGateway(
-                    0xb685400156cF3CBE8725958DeAA61436727A30c3,
-                    address(this)
-                );
+                WETHGateway gateway = new WETHGateway(_asset, address(this));
                 gateway.authorizePool(lendingPoolAddress);
                 gateway.depositETH{value: msg.value}(
                     lendingPoolAddress,
@@ -97,7 +95,7 @@ contract CreateTournamentFactory is Ownable {
 
                 require(
                     ierc20.transferFrom(
-                        msg.sender,
+                        _msgSender(),
                         address(this),
                         _initial_invested_amount
                     ),

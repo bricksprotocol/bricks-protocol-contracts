@@ -12,6 +12,9 @@ import {UserConfiguration} from "@aave/core-v3/contracts/protocol/libraries/conf
 import {DataTypes} from "@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol";
 import {DataTypesHelper} from "./libraries/DataTypesHelper.sol";
 
+//import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+//import "@opengsn/contracts/src/BaseRelayRecipient.sol";
+
 contract WETHGateway is IWETHGateway, Ownable {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using UserConfiguration for DataTypes.UserConfigurationMap;
@@ -25,7 +28,9 @@ contract WETHGateway is IWETHGateway, Ownable {
      * @param weth Address of the Wrapped Ether contract
      * @param owner Address of the owner of this contract
      **/
-    constructor(address weth, address owner) {
+
+    constructor(address weth, address owner) public {
+        // trustedForwarder = _trustedForwarder;
         WETH = IWeth(weth);
         transferOwnership(owner);
     }
@@ -51,7 +56,7 @@ contract WETHGateway is IWETHGateway, Ownable {
     }
 
     /**
-     * @dev withdraws the WETH _reserves of msg.sender.
+     * @dev withdraws the WETH _reserves of msgSender().
      * @param pool address of the targeted underlying pool
      * @param amount amount of aWETH to withdraw and receive native ETH
      * @param to address of the user who will receive native ETH
@@ -92,7 +97,7 @@ contract WETHGateway is IWETHGateway, Ownable {
      * @dev Only WETH contract is allowed to transfer ETH here. Prevent other addresses to send Ether to this contract.
      */
     receive() external payable {
-        require(msg.sender == address(WETH), "Receive not allowed");
+        require(_msgSender() == address(WETH), "Receive not allowed");
     }
 
     /**

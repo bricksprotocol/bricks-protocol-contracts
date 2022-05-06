@@ -4,8 +4,14 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WETHGateway.sol";
+import "@opengsn/contracts/src/BaseRelayRecipient.sol";
 
-contract Tournament is Ownable {
+//import "@opengsn/contracts/src/BaseRelayRecipient.sol";
+
+//import "./ERC2771Recipient.sol";
+//import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+
+contract Tournament is Ownable, BaseRelayRecipient {
     using ECDSA for bytes32;
 
     // enum ParticipantType {
@@ -43,6 +49,7 @@ contract Tournament is Ownable {
     address private aAssetAddress;
     bool private isNativeAsset;
     uint256 public _allowance;
+    // address private _forwarder;
     // custom variables for testing only
     // uint256 public fraction;
     // string public data;
@@ -64,8 +71,8 @@ contract Tournament is Ownable {
     //     //setChainlinkOracle(_oracle);
     // }
 
-    constructor() {
-        //  verificationAddress = _verificationAddress;
+    constructor(address _trustedForwarder) public {
+        trustedForwarder = _trustedForwarder;
     }
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
@@ -143,15 +150,15 @@ contract Tournament is Ownable {
 
         // check if the values match
         uint256 balance = (isNativeAsset)
-            ? address(msg.sender).balance
-            : ierc20.balanceOf(msg.sender);
+            ? address(_msgSender()).balance
+            : ierc20.balanceOf(_msgSender());
         require(
             balance >= tournamentEntryFees,
             "You do not have enough to join this Event"
         );
         // check if the participant is already registered the event
         require(
-            participantFees[msg.sender] != true,
+            participantFees[_msgSender()] != true,
             "Participant is already registered"
         );
 
@@ -167,7 +174,7 @@ contract Tournament is Ownable {
             } else {
                 require(
                     ierc20.transferFrom(
-                        msg.sender,
+                        _msgSender(),
                         address(this),
                         tournamentEntryFees
                     )
@@ -181,10 +188,10 @@ contract Tournament is Ownable {
                 );
             }
         }
-        participantFees[msg.sender] = true;
-        participants.push(payable(msg.sender));
-        participantWithdrawnStatus[msg.sender] = false;
-        emit ParticipantJoined(msg.sender, tournamentEntryFees);
+        participantFees[_msgSender()] = true;
+        participants.push(payable(_msgSender()));
+        participantWithdrawnStatus[_msgSender()] = false;
+        emit ParticipantJoined(_msgSender(), tournamentEntryFees);
     }
 
     // dummy funtion to withdraw funds, not to be used for production
@@ -205,7 +212,7 @@ contract Tournament is Ownable {
         //     // initial invested amount as well as entry fees both are zero
         //     // There is no need to withdraw any amount as aave has not been used
         //     // Instead change the flags for withdrawal
-        // } else if (initialVestedAmount == 0 && participantFees[msg.sender]) {
+        // } else if (initialVestedAmount == 0 && participantFees[_msgSender()]) {
         //     // only initial invested amount is zero
         //     withdrawEntryFees();
         // } else if (tournamentEntryFees == 0) {
@@ -213,7 +220,7 @@ contract Tournament is Ownable {
         //     withdrawInitialVestedAmount();
         // } else {
         //     // Neither initial invested amount or tournament fee is zero
-        //     if (msg.sender == creator && participantFees[msg.sender]) {
+        //     if (_msgSender() == creator && participantFees[msg.sender]) {
         //         // msg.sender is a creator as well as a participant
         //         withdrawInitialVestedAmount();
         //         withdrawEntryFees();
@@ -231,7 +238,7 @@ contract Tournament is Ownable {
         require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
 
         require(
-            !participantWithdrawnStatus[msg.sender],
+            !participantWithdrawnStatus[_msgSender()],
             "Participant has already withdrawn the share"
         );
 
@@ -239,15 +246,15 @@ contract Tournament is Ownable {
             verifyMessage(Strings.toString(withdrawPercentage), sig),
             "Can't verify identity"
         );
-        if (msg.sender == creator) {
+        if (_msgSender() == creator) {
             withdrawInitialVestedAmount();
         }
 
-        if (participantFees[msg.sender]) {
+        if (participantFees[_msgSender()]) {
             withdrawEntryFeesWithRewards(withdrawPercentage);
         }
 
-        participantWithdrawnStatus[msg.sender] = true;
+        participantWithdrawnStatus[_msgSender()] = true;
     }
 
     // function getWithdrawalStatus() public view returns (bool) {
@@ -265,11 +272,11 @@ contract Tournament is Ownable {
     function withdrawInitialVestedAmount() private {
         //ERC20 ierc20 = ERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
 
-        if (msg.sender == creator && initialVestedAmount > 0) {
+        if (_msgSender() == creator && initialVestedAmount > 0) {
             withdrawFromAave(initialVestedAmount);
             totalWithdrawnAmount += initialVestedAmount;
-            emit withdraw(msg.sender, initialVestedAmount);
-            emit InitiateWithdraw(msg.sender, initialVestedAmount);
+            emit withdraw(_msgSender(), initialVestedAmount);
+            emit InitiateWithdraw(_msgSender(), initialVestedAmount);
         }
     }
 
@@ -285,8 +292,8 @@ contract Tournament is Ownable {
                 ((rewardsPercentage * rewards) / 100);
             withdrawFromAave(amountToWithdraw);
             totalWithdrawnAmount += amountToWithdraw;
-            emit withdraw(msg.sender, amountToWithdraw);
-            emit InitiateWithdraw(msg.sender, amountToWithdraw);
+            emit withdraw(_msgSender(), amountToWithdraw);
+            emit InitiateWithdraw(_msgSender(), amountToWithdraw);
         }
     }
 
@@ -301,13 +308,13 @@ contract Tournament is Ownable {
             gateway.withdrawETH(
                 lending_pool_address,
                 amountToWithdraw,
-                msg.sender
+                _msgSender()
             );
         } else {
             IPool(lending_pool_address).withdraw(
                 address(asset),
                 amountToWithdraw,
-                msg.sender
+                _msgSender()
             );
         }
     }
@@ -324,7 +331,7 @@ contract Tournament is Ownable {
             signature
         );
 
-        if (msg.sender == signeraddress) {
+        if (_msgSender() == signeraddress) {
             //The message is authentic
             return true;
         } else {
