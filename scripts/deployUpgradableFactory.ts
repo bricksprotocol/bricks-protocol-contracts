@@ -3,7 +3,7 @@
 //
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { run, ethers } from "hardhat";
+import { run, ethers, upgrades } from "hardhat";
 import { config } from "../config";
 import Web3 from "web3";
 import wethAbi from "../abis/weth.json";
@@ -48,13 +48,25 @@ async function main() {
   //const wethToken = new ethers.Contract(config.kovan.wethToken, wethAbi, owner);
 
   const daiToken = new ethers.Contract(token, usdcAbi, owner);
-  const tournamentFactory = await createTournamentFactory
-    .connect(owner)
-    .deploy();
+  //   const tournamentFactory = await createTournamentFactory
+  //     .connect(owner)
+  //     .deploy();
 
-  await tournamentFactory.connect(owner).deployed();
+  //   await tournamentFactory.connect(owner).deployed();
 
-  console.log("Tournament Factory deployed to:", tournamentFactory.address);
+  //   console.log("Tournament Factory deployed to:", tournamentFactory.address);
+
+  const tournamentFactory = await upgrades.deployProxy(createTournamentFactory);
+
+  console.log(tournamentFactory.address, " proxy address");
+  //   console.log(
+  //     await upgrades.erc1967.getImplementationAddress(tournamentFactory.address),
+  //     " getImplementationAddress"
+  //   );
+  //   console.log(
+  //     await upgrades.erc1967.getAdminAddress(tournamentFactory.address),
+  //     " getAdminAddress"
+  //   );
 
   const approveTxn = await daiToken.approve(
     tournamentFactory.address,
@@ -66,9 +78,9 @@ async function main() {
   // console.log(
   //   await wethToken.allowance(owner.address, tournamentFactory.address)
   // );
-  const transaction = await tournamentFactory
-    .connect(owner)
-    .setLendingPoolAddressProvider(lendingPoolProviderAddress);
+  const transaction = await tournamentFactory.setLendingPoolAddressProvider(
+    lendingPoolProviderAddress
+  );
   await transaction.wait();
 
   // const verificationTransaction = await tournamentFactory
@@ -87,8 +99,8 @@ async function main() {
     .connect(owner)
     .createTournamentPool(
       "URI",
-      1651842737,
-      1651842772,
+      1651840820,
+      1651841195,
       ENTRY_FEES,
       token,
       INITIAL_INVESTED_AMOUNT,

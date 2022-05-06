@@ -64,9 +64,9 @@ contract Tournament is Ownable {
     //     //setChainlinkOracle(_oracle);
     // }
 
-    constructor() {
-        //  verificationAddress = _verificationAddress;
-    }
+    // constructor() {
+    //     //  verificationAddress = _verificationAddress;
+    // }
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
     // {"name": "tournament_name", "description" : "tournament_description", "trading_assets": [], "image": "image_url"}
@@ -84,10 +84,10 @@ contract Tournament is Ownable {
         address _aAssetAddress,
         bool _isNativeAsset
     ) public {
-        require(
-            _tournamentStart >= block.timestamp,
-            "Start time has already passed!"
-        );
+        // require(
+        //     _tournamentStart >= block.timestamp,
+        //     "Start time has already passed!"
+        // );
         require(
             _tournamentEnd > _tournamentStart,
             "Tournament should end after start point!"

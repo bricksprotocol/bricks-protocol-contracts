@@ -4,10 +4,11 @@ pragma solidity >=0.8.0;
 
 import "./Tournament.sol";
 import "./interfaces/IPoolAddressesProvider.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 //import "./WETHGateway.sol";
 
-contract CreateTournamentFactory is Ownable {
+contract CreateTournamentFactory is OwnableUpgradeable {
     Tournament[] public tournamentsArray;
     mapping(address => bool) tournamentsMapping;
     event tournamentCreated(address tournamentAddress);
@@ -15,7 +16,7 @@ contract CreateTournamentFactory is Ownable {
     // IWETH iweth;
 
     address lendingPoolAddressProvider;
-    address lendingPoolAddress;
+    address public lendingPoolAddress;
     address dataProvider;
     //address linkTokenAddress;
     // uint256 linkFundValue;
@@ -25,6 +26,10 @@ contract CreateTournamentFactory is Ownable {
     // address private oracle;
     // bytes32 private jobId;
     // uint256 private fee;
+
+    function initialize() public initializer {
+        __Ownable_init();
+    }
 
     function setProtocolFees(uint256 _protocolFees) public onlyOwner {
         protocolFees = _protocolFees;
@@ -82,10 +87,7 @@ contract CreateTournamentFactory is Ownable {
         });
         if (_initial_invested_amount != 0) {
             if (_isNativeAsset) {
-                WETHGateway gateway = new WETHGateway(
-                    0xb685400156cF3CBE8725958DeAA61436727A30c3,
-                    address(this)
-                );
+                WETHGateway gateway = new WETHGateway(_asset, address(this));
                 gateway.authorizePool(lendingPoolAddress);
                 gateway.depositETH{value: msg.value}(
                     lendingPoolAddress,

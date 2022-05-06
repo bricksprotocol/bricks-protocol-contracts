@@ -13,7 +13,8 @@
     "block-number": "npx hardhat block-number",
     "deploy": "npx hardhat run scripts/deploy.ts",
     "kovan": "npx hardhat run scripts/deploy.ts --network kovan",
-    "matic": "npx hardhat run scripts/deploy.ts --network matic",
+    "matic": "npx hardhat run scripts/deployUpgradableFactory.ts --network matic",
+    "upgradeFactoryMatic": "npx hardhat run scripts/upgradeFactoryVersion.ts --network matic",
     "rinkeby": "npx hardhat run scripts/deploy.ts --network rinkeby",
     "joinTournament": "npx hardhat run scripts/joinTournament.ts --network matic",
     "joinTournament2": "npx hardhat run scripts/joinTournament2.ts --network matic",
@@ -27,12 +28,12 @@
   },
   "private": true,
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-etherscan": "^2.1.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.4.2",
     "@openzeppelin/contracts-upgradeable": "^4.3.2",
-    "@openzeppelin/hardhat-upgrades": "^1.10.0",
+    "@openzeppelin/hardhat-upgrades": "^1.17.0",
     "@typechain/ethers-v5": "^7.0.1",
     "@typechain/hardhat": "^2.1.2",
     "@types/chai": "^4.3.0",
@@ -58,6 +59,7 @@
     "@chainlink/contracts": "^0.4.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "eth-crypto": "^2.2.0",
+    "ethers": "^5.6.5",
     "web3": "^1.7.3"
   }
 }
