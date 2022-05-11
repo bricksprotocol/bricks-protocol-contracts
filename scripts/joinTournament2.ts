@@ -4,14 +4,14 @@ import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0x748FA8396603608B61c47000e05C8eb735D04ae0";
+const tournamentAddress = "0x8E9a3F49bB9F5Bc500895554eEC31135eA280Cb1";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 
 async function main() {
   await run("compile");
 
-  const tournamentFactory = await ethers.getContractFactory("Tournament");
+  const tournamentFactory = await ethers.getContractFactory("Tournamentv2");
   const tournament = tournamentFactory.attach(tournamentAddress);
 
   const [owner, secondOwner] = await ethers.getSigners();
@@ -42,6 +42,12 @@ async function main() {
     .connect(secondOwner)
     .joinTournament();
   await secondAddressTournamentEntry.wait();
+
+  console.log(
+    await tournament.connect(secondOwner).participants(1),
+    " ",
+    await tournament.connect(secondOwner).participants(0)
+  );
 
   //   const provider = await new ethers.providers.JsonRpcProvider(
   //     process.env.RPC_ENDPOINT

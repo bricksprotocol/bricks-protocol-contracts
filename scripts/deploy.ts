@@ -50,7 +50,7 @@ async function main() {
   const daiToken = new ethers.Contract(token, usdcAbi, owner);
   const tournamentFactory = await createTournamentFactory
     .connect(owner)
-    .deploy();
+    .deploy("Z");
 
   await tournamentFactory.connect(owner).deployed();
 

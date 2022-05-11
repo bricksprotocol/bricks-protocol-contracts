@@ -28,6 +28,15 @@ async function main() {
 
   const lendingPoolProviderAddress =
     config.mumbaiTest.lendingPoolAddressesProvider;
+
+  const tournament = await ethers.getContractFactory("Tournament");
+
+  const tournamentDeployed = await tournament.connect(owner).deploy();
+
+  await tournamentDeployed.connect(owner).deployed();
+
+  console.log("tournament");
+
   // We get the contract to deploy
   const createTournamentFactory = await ethers.getContractFactory(
     "CreateTournamentFactory"
@@ -55,10 +64,21 @@ async function main() {
   //   await tournamentFactory.connect(owner).deployed();
 
   //   console.log("Tournament Factory deployed to:", tournamentFactory.address);
+  //console.log("Tr address", tournamentDeployed.address);
 
-  const tournamentFactory = await upgrades.deployProxy(createTournamentFactory);
+  const tournamentFactory = await upgrades.deployProxy(
+    createTournamentFactory,
+    [tournamentDeployed.address]
+  );
+  // const tournamentFactory = await createTournamentFactory
+  //   .connect(owner)
+  //   .deploy(tournamentDeployed.address);
+
+  await tournamentFactory.deployed();
 
   console.log(tournamentFactory.address, " proxy address");
+
+  //console.log("Beacon Imp ", await tournamentFactory.getImplementation());
   //   console.log(
   //     await upgrades.erc1967.getImplementationAddress(tournamentFactory.address),
   //     " getImplementationAddress"
@@ -71,7 +91,7 @@ async function main() {
   const approveTxn = await daiToken.approve(
     tournamentFactory.address,
     // ethers.utils.parseEther("0.001")
-    INITIAL_INVESTED_AMOUNT
+    ethers.BigNumber.from(Web3.utils.toWei("120", "ether")).toString()
   );
   await approveTxn.wait();
 
@@ -92,7 +112,9 @@ async function main() {
     "Lending Address",
     await tournamentFactory.getLendingPoolAddressProvider()
   );
-  //const options = { value: INITIAL_INVESTED_AMOUNT };
+
+  console.log("beacon address ", await tournamentFactory.tournamentBeacon());
+  //const options = { value: Web3.utils.toWei("0.01", "ether") };
   // ENTRY_FEES = 0.01 * 10 ** 8;
   //INITIAL_INVESTED_AMOUNT = 0.1 * 10 ** 8;
   const createPoolTxn = await tournamentFactory
@@ -110,6 +132,21 @@ async function main() {
 
   await createPoolTxn.wait();
 
+  const createPoolTxn2 = await tournamentFactory
+    .connect(owner)
+    .createTournamentPool(
+      "Game URI",
+      1651840820,
+      1651841195,
+      ENTRY_FEES,
+      token,
+      INITIAL_INVESTED_AMOUNT,
+      aToken,
+      false
+    );
+
+  await createPoolTxn2.wait();
+
   // console.log("created");
   // // const firstAddressInitialBalance = await wethToken.balanceOf(owner.address);
   // // const secondAddressInitialBalance = await wethToken.balanceOf(
@@ -119,7 +156,13 @@ async function main() {
   const tournamentAddress = await tournamentFactory
     .connect(owner)
     .tournamentsArray(0);
-  console.log("Adress", tournamentAddress);
+  console.log("Proxy Tournament Adress-1", tournamentAddress);
+
+  const tournamentAddress2 = await tournamentFactory
+    .connect(owner)
+    .tournamentsArray(1);
+
+  console.log("Proxy Tournament Address-2", tournamentAddress2);
 
   const adaiToken = new ethers.Contract(aToken, usdcAbi, owner);
 

@@ -33,7 +33,7 @@ const config: HardhatUserConfig = {
       // gasPrice: 800000000000,
     },
     matic: {
-      url: "https://matic-mumbai.chainstacklabs.com",
+      url: "https://polygon-mumbai.g.alchemy.com/v2/audnHAeVnXRoVIya04iyWWb2b5xjAdH-",
       accounts: [privateKey!, secondPvtKey!],
     },
   },
@@ -51,6 +51,17 @@ const config: HardhatUserConfig = {
       {
         version: "0.6.12",
       },
+      {
+        version: "0.5.0",
+      },
+      // },
+      // {
+      //   version: "0.5.2",
+      // },
+      // {
+      //   version: "0.5.3",
+      // },
+
       // {
       //   version: "0.8.10",
       //   settings: {

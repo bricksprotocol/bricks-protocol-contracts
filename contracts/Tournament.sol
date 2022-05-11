@@ -4,8 +4,10 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WETHGateway.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract Tournament is Ownable {
+contract Tournament is Initializable, OwnableUpgradeable {
     using ECDSA for bytes32;
 
     // enum ParticipantType {
@@ -70,6 +72,11 @@ contract Tournament is Ownable {
 
     // @dev tournamentURI will contain all the details pertaining to an tournament
     // {"name": "tournament_name", "description" : "tournament_description", "trading_assets": [], "image": "image_url"}
+
+    function initialize() external initializer {
+        __Ownable_init();
+    }
+
     function createPool(
         string memory _tournamentURI,
         uint256 _tournamentStart,
@@ -187,7 +194,6 @@ contract Tournament is Ownable {
         emit ParticipantJoined(msg.sender, tournamentEntryFees);
     }
 
-    // dummy funtion to withdraw funds, not to be used for production
     function withdrawFunds(uint256 withdrawPercentage, bytes memory sig)
         public
     {
