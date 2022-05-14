@@ -11,7 +11,7 @@ const aToken = config.mumbaiTest.adaiToken;
 async function main() {
   await run("compile");
 
-  const tournamentFactory = await ethers.getContractFactory("Tournamentv2");
+  const tournamentFactory = await ethers.getContractFactory("Tournament");
   const tournament = tournamentFactory.attach(tournamentAddress);
 
   const [owner, secondOwner] = await ethers.getSigners();
