@@ -16,25 +16,25 @@ let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 async function main() {
-  const proxyAddress = "0xBCd9EE9b73d3CD71DAB461d257d7004E5fcBa796";
-  const tournamentProxyAddress = "0x8E9a3F49bB9F5Bc500895554eEC31135eA280Cb1";
-  const tournamentProxyAddress1 = "0xC21248856F1d1bE99714C9fc8E560968c827701f";
-  const beaconAddress = "0x58fCC459004FCeA57EE34b41e0B0264548Bf419f";
-  const FactoryV2 = await ethers.getContractFactory(
-    "CreateTournamentFactoryv2"
-  );
-  console.log("upgrade to CreateTournamentFactoryv2...");
-  const factoryV2 = await upgrades.upgradeProxy(proxyAddress, FactoryV2);
-  console.log(
-    factoryV2.address,
-    " CreateTournamentFactoryv2 address(should be the same)"
-  );
-  console.log("LendingAddress", await factoryV2.lendingPoolAddress());
-  const tx = await factoryV2.upgradeLendingAddress(
-    "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0"
-  );
-  await tx.wait();
-  console.log("LendingAddress", await factoryV2.lendingPoolAddress());
+  const proxyAddress = "0x60ad020656bc2B3429e596d7EBE5279d9D675DB8";
+  const tournamentProxyAddress = "0x964349fc36e34096b7D1B7a9062f76e1a80662fb";
+  const tournamentProxyAddress1 = "0x26D2260dc3072F7EE4c29819255BFE08a07D16dc";
+  const beaconAddress = "0x368CACbA1e61d88e9CE9D753410b29D3fA615382";
+  // const FactoryV2 = await ethers.getContractFactory(
+  //   "CreateTournamentFactoryv2"
+  // );
+  // console.log("upgrade to CreateTournamentFactoryv2...");
+  // const factoryV2 = await upgrades.upgradeProxy(proxyAddress, FactoryV2);
+  // console.log(
+  //   factoryV2.address,
+  //   " CreateTournamentFactoryv2 address(should be the same)"
+  // );
+  // console.log("LendingAddress", await factoryV2.lendingPoolAddress());
+  // const tx = await factoryV2.upgradeLendingAddress(
+  //   "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0"
+  // );
+  // await tx.wait();
+  // console.log("LendingAddress", await factoryV2.lendingPoolAddress());
 
   // const TournamentV1 = await ethers.getContractFactory("Tournament");
   // const tournamentProxyContract = await TournamentV1.attach(

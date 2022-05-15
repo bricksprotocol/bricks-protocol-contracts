@@ -5,14 +5,14 @@ import usdcAbi from "../abis/usdc.json";
 import EthCrypto from "eth-crypto";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0x748FA8396603608B61c47000e05C8eb735D04ae0";
+const tournamentAddress = "0x964349fc36e34096b7D1B7a9062f76e1a80662fb";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 
 async function main() {
   await run("compile");
 
-  const tournamentFactory = await ethers.getContractFactory("Tournament");
+  const tournamentFactory = await ethers.getContractFactory("Tournamentv2");
   const tournament = tournamentFactory.attach(tournamentAddress);
 
   const [owner, secondOwner] = await ethers.getSigners();
@@ -44,10 +44,7 @@ async function main() {
   console.log("Signature ", signature);
   const signatureVerification = await tournament.verifyMessage("40", signature);
   console.log("verification ", signatureVerification);
-  const firstAddressTournamentEntry = await tournament.withdrawFunds(
-    40,
-    signature
-  );
+  const firstAddressTournamentEntry = await tournament.withdraw2(40, signature);
   await firstAddressTournamentEntry.wait();
   // const secondAddressTournamentEntry = await tournament
   //   .connect(secondOwner)
