@@ -252,6 +252,9 @@ contract Tournament is Initializable, OwnableUpgradeable {
 
         //Verify verify = Verify(verificationAddress);
         require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
+
+        require(participantFees[msg.sender], "Participant isn't registered");
+
         require(
             msg.sender == creator
                 ? !hasCreatorWithdrawn
@@ -357,5 +360,13 @@ contract Tournament is Initializable, OwnableUpgradeable {
             //msg.sender didnt sign this message.
             return false;
         }
+    }
+
+    function hasUserWithdrawn() public view returns (bool) {
+        if (msg.sender == creator) {
+            return hasCreatorWithdrawn;
+        }
+
+        return participantWithdrawnStatus[msg.sender];
     }
 }
