@@ -8,7 +8,7 @@ contract Tournamentv2 is Tournament {
         tournamentURI = uri;
     }
 
-    function withdraw2(uint256 withdrawPercentage, bytes memory sig) public {
-        withdrawFunds(withdrawPercentage, sig);
+    function withdraw2(bytes memory sig) public {
+        withdrawFunds(sig);
     }
 }

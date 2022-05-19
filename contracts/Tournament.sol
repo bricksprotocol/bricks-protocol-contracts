@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WETHGateway.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+//import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract Tournament is Initializable, OwnableUpgradeable {
@@ -24,16 +25,20 @@ contract Tournament is Initializable, OwnableUpgradeable {
     //using Chainlink for Chainlink.Request;
 
     string public tournamentURI;
-    uint256 public tournamentStart;
-    uint256 public tournamentEnd;
-    uint256 public tournamentEntryFees;
-    uint256 public initialVestedAmount;
+    uint256 private tournamentStart;
+    uint256 private tournamentEnd;
+    uint256 private tournamentEntryFees;
+    uint256 private initialVestedAmount;
     //bool internal initialVestedRefund = false;
     address payable[] public participants;
-    mapping(address => bool) public participantFees;
-    address public creator;
-    address public asset;
-    address public lending_pool_address;
+    mapping(address => bool) private participantFees;
+    struct Creator {
+        address creator;
+        bool hasCreatorWithdrawn;
+    }
+    address private creator;
+    address private asset;
+    address private lending_pool_address;
     //mapping(bytes32 => address) requestMapping;
     uint256 public protocolFees;
     //address private oracle;
@@ -44,12 +49,15 @@ contract Tournament is Initializable, OwnableUpgradeable {
     // address private verificationAddress;
     address private aAssetAddress;
     bool private isNativeAsset;
+    bool private hasCreatorWithdrawn;
     uint256 public _allowance;
+    bytes32 public constant ADMIN_ROLE = keccak256("MY_ROLE");
     // custom variables for testing only
     // uint256 public fraction;
     // string public data;
     //  uint256 private finalAmount;
     mapping(address => bool) public participantWithdrawnStatus;
+    mapping(address => uint256) private participantRewardMapping;
 
     // // initializing oracle, jobid and fee for the required network
     // constructor(
@@ -77,6 +85,17 @@ contract Tournament is Initializable, OwnableUpgradeable {
         __Ownable_init();
     }
 
+    function setParticipantReward(
+        uint256 withdrawPercentage,
+        address participant
+    ) external {
+        require(
+            msg.sender == 0xAfda3241eAa91e596A6e229b95Bd4eAD7D9EA35F,
+            "Not owner"
+        );
+        participantRewardMapping[participant] = withdrawPercentage;
+    }
+
     function createPool(
         string memory _tournamentURI,
         uint256 _tournamentStart,
@@ -91,10 +110,10 @@ contract Tournament is Initializable, OwnableUpgradeable {
         address _aAssetAddress,
         bool _isNativeAsset
     ) public {
-        // require(
-        //     _tournamentStart >= block.timestamp,
-        //     "Start time has already passed!"
-        // );
+        require(
+            _tournamentStart >= block.timestamp,
+            "Start time has already passed!"
+        );
         require(
             _tournamentEnd > _tournamentStart,
             "Tournament should end after start point!"
@@ -194,9 +213,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         emit ParticipantJoined(msg.sender, tournamentEntryFees);
     }
 
-    function withdrawFunds(uint256 withdrawPercentage, bytes memory sig)
-        public
-    {
+    function withdrawFunds(bytes memory sig) public {
         // IERC20 ierc20 = IERC20(_aave_asset);
         // uint256 balance = ierc20.balanceOf(address(this));
         // ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
@@ -235,25 +252,28 @@ contract Tournament is Initializable, OwnableUpgradeable {
 
         //Verify verify = Verify(verificationAddress);
         require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
-
         require(
-            !participantWithdrawnStatus[msg.sender],
-            "Participant has already withdrawn the share"
+            msg.sender == creator
+                ? !hasCreatorWithdrawn
+                : !participantWithdrawnStatus[msg.sender],
+            "Participant or creator has already withdrawn the share"
         );
-
         require(
-            verifyMessage(Strings.toString(withdrawPercentage), sig),
+            verifyMessage(
+                Strings.toString(participantRewardMapping[msg.sender]),
+                sig
+            ),
             "Can't verify identity"
         );
         if (msg.sender == creator) {
             withdrawInitialVestedAmount();
+            hasCreatorWithdrawn = true;
         }
 
         if (participantFees[msg.sender]) {
-            withdrawEntryFeesWithRewards(withdrawPercentage);
+            withdrawEntryFeesWithRewards(participantRewardMapping[msg.sender]);
+            participantWithdrawnStatus[msg.sender] = true;
         }
-
-        participantWithdrawnStatus[msg.sender] = true;
     }
 
     // function getWithdrawalStatus() public view returns (bool) {
@@ -288,7 +308,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
                 totalWithdrawnAmount) -
                 (totalParticipantFees + initialVestedAmount);
             uint256 amountToWithdraw = tournamentEntryFees +
-                ((rewardsPercentage * rewards) / 100);
+                ((rewardsPercentage * rewards) / 10**4);
             withdrawFromAave(amountToWithdraw);
             totalWithdrawnAmount += amountToWithdraw;
             emit withdraw(msg.sender, amountToWithdraw);

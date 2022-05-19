@@ -6,7 +6,6 @@ import "./interfaces/IPoolAddressesProvider.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./TournamentBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import "./TournamentProxy.sol";
 
 //import "@openzeppelin/upgrades/contracts/upgradeability/ProxyFactory.sol";
 
@@ -83,17 +82,10 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         address _aAssetAddress,
         bool _isNativeAsset
     ) public payable {
-        //address proxy = deployMinimal(implementationContract);
         BeaconProxy tournamentProxy = new BeaconProxy(
             address(tournamentBeacon),
             abi.encodeWithSelector(Tournament(address(0)).initialize.selector)
-            //""
         );
-        // Tournament tournament = new Tournament();
-        // TournamentProxy tournamentProxy = new TournamentProxy(
-        //     address(tournament),
-        //     abi.encodeWithSelector(Tournament(address(0)).initialize.selector)
-        // );
         tournamentsArray.push(tournamentProxy);
         tournamentsMapping[address(tournamentProxy)] = true;
         Tournament(address(tournamentProxy)).createPool({

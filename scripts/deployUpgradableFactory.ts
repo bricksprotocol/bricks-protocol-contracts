@@ -117,35 +117,35 @@ async function main() {
   //const options = { value: Web3.utils.toWei("0.01", "ether") };
   // ENTRY_FEES = 0.01 * 10 ** 8;
   //INITIAL_INVESTED_AMOUNT = 0.1 * 10 ** 8;
-  const createPoolTxn = await tournamentFactory
-    .connect(owner)
-    .createTournamentPool(
-      "URI",
-      1651840820,
-      1651841195,
-      ENTRY_FEES,
-      token,
-      INITIAL_INVESTED_AMOUNT,
-      aToken,
-      false
-    );
+  // const createPoolTxn = await tournamentFactory
+  //   .connect(owner)
+  //   .createTournamentPool(
+  //     "URI",
+  //     1651840820,
+  //     1651841195,
+  //     ENTRY_FEES,
+  //     token,
+  //     INITIAL_INVESTED_AMOUNT,
+  //     aToken,
+  //     false
+  //   );
 
-  await createPoolTxn.wait();
+  // await createPoolTxn.wait();
 
-  const createPoolTxn2 = await tournamentFactory
-    .connect(owner)
-    .createTournamentPool(
-      "Game URI",
-      1651840820,
-      1651841195,
-      ENTRY_FEES,
-      token,
-      INITIAL_INVESTED_AMOUNT,
-      aToken,
-      false
-    );
+  // const createPoolTxn2 = await tournamentFactory
+  //   .connect(owner)
+  //   .createTournamentPool(
+  //     "Game URI",
+  //     1651840820,
+  //     1651841195,
+  //     ENTRY_FEES,
+  //     token,
+  //     INITIAL_INVESTED_AMOUNT,
+  //     aToken,
+  //     false
+  //   );
 
-  await createPoolTxn2.wait();
+  // await createPoolTxn2.wait();
 
   // console.log("created");
   // // const firstAddressInitialBalance = await wethToken.balanceOf(owner.address);
@@ -153,23 +153,23 @@ async function main() {
   // //   secondOwner.address
   // // );
 
-  const tournamentAddress = await tournamentFactory
-    .connect(owner)
-    .tournamentsArray(0);
-  console.log("Proxy Tournament Adress-1", tournamentAddress);
+  // const tournamentAddress = await tournamentFactory
+  //   .connect(owner)
+  //   .tournamentsArray(0);
+  // console.log("Proxy Tournament Adress-1", tournamentAddress);
 
-  const tournamentAddress2 = await tournamentFactory
-    .connect(owner)
-    .tournamentsArray(1);
+  // const tournamentAddress2 = await tournamentFactory
+  //   .connect(owner)
+  //   .tournamentsArray(1);
 
-  console.log("Proxy Tournament Address-2", tournamentAddress2);
+  // console.log("Proxy Tournament Address-2", tournamentAddress2);
 
-  const adaiToken = new ethers.Contract(aToken, usdcAbi, owner);
+  // const adaiToken = new ethers.Contract(aToken, usdcAbi, owner);
 
-  console.log(
-    "Tournament Balance ",
-    await adaiToken.balanceOf(tournamentAddress)
-  );
+  // console.log(
+  //   "Tournament Balance ",
+  //   await adaiToken.balanceOf(tournamentAddress)
+  // );
 
   // const txn = await tournament.joinTournament();
   // await txn.wait();

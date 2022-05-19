@@ -4,7 +4,7 @@ import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0x8E9a3F49bB9F5Bc500895554eEC31135eA280Cb1";
+const tournamentAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 
@@ -43,11 +43,11 @@ async function main() {
     .joinTournament();
   await secondAddressTournamentEntry.wait();
 
-  console.log(
-    await tournament.connect(secondOwner).participants(1),
-    " ",
-    await tournament.connect(secondOwner).participants(0)
-  );
+  // console.log(
+  //   await tournament.connect(secondOwner).participants(1),
+  //   " ",
+  //   await tournament.connect(secondOwner).participants(0)
+  // );
 
   //   const provider = await new ethers.providers.JsonRpcProvider(
   //     process.env.RPC_ENDPOINT

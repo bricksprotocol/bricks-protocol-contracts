@@ -17,9 +17,9 @@ const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 async function main() {
   const proxyAddress = "0x60ad020656bc2B3429e596d7EBE5279d9D675DB8";
-  const tournamentProxyAddress = "0x964349fc36e34096b7D1B7a9062f76e1a80662fb";
-  const tournamentProxyAddress1 = "0x26D2260dc3072F7EE4c29819255BFE08a07D16dc";
-  const beaconAddress = "0x368CACbA1e61d88e9CE9D753410b29D3fA615382";
+  const tournamentProxyAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
+  // const tournamentProxyAddress1 = "0x26D2260dc3072F7EE4c29819255BFE08a07D16dc";
+  const beaconAddress = "0x4F308EA0c301c9154A5639cf1f9064F49C516a13";
   // const FactoryV2 = await ethers.getContractFactory(
   //   "CreateTournamentFactoryv2"
   // );
@@ -69,21 +69,21 @@ async function main() {
     await tournamentV2ProxyContract.tournamentURI()
   );
 
-  const tournamentV2ProxyContract1 = await TournamentV2.attach(
-    tournamentProxyAddress1
-  );
-  console.log(
-    "URI tournament ",
-    await tournamentV2ProxyContract1.tournamentURI()
-  );
+  // const tournamentV2ProxyContract1 = await TournamentV2.attach(
+  //   tournamentProxyAddress1
+  // );
+  // console.log(
+  //   "URI tournament ",
+  //   await tournamentV2ProxyContract1.tournamentURI()
+  // );
 
-  const txn1 = await tournamentV2ProxyContract1.upgradeUri("new game URI");
-  await txn1.wait();
+  // const txn1 = await tournamentV2ProxyContract1.upgradeUri("new game URI");
+  // await txn1.wait();
 
-  console.log(
-    " New URI tournament ",
-    await tournamentV2ProxyContract1.tournamentURI()
-  );
+  // console.log(
+  //   " New URI tournament ",
+  //   await tournamentV2ProxyContract1.tournamentURI()
+  // );
 }
 
 // We recommend this pattern to be able to use async/await everywhere
