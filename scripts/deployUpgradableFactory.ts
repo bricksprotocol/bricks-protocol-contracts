@@ -10,6 +10,7 @@ import wethAbi from "../abis/weth.json";
 import usdcAbi from "../abis/usdc.json";
 import adaiAbi from "../abis/adai.json";
 import { makeTransferProxyAdminOwnership } from "@openzeppelin/hardhat-upgrades/dist/admin";
+import { CreateTournamentFactory } from "../typechain";
 const ETHERSCAN_TX_URL = "https://kovan.etherscan.io/tx/";
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
 let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
@@ -66,17 +67,21 @@ async function main() {
   //   console.log("Tournament Factory deployed to:", tournamentFactory.address);
   //console.log("Tr address", tournamentDeployed.address);
 
-  const tournamentFactory = await upgrades.deployProxy(
-    createTournamentFactory,
-    [tournamentDeployed.address]
+  const tournamentFactory = createTournamentFactory.attach(
+    "0xc8869C6Ef8163AbCF178c775D9ad4aA3371B3Bee"
   );
+
+  // const tournamentFactory = await upgrades.deployProxy(
+  //   createTournamentFactory,
+  //   [tournamentDeployed.address]
+  // );
   // const tournamentFactory = await createTournamentFactory
   //   .connect(owner)
   //   .deploy(tournamentDeployed.address);
 
-  await tournamentFactory.deployed();
+  //await tournamentFactory.deployed();
 
-  console.log(tournamentFactory.address, " proxy address");
+  //console.log(tournamentFactory.address, " proxy address");
 
   //console.log("Beacon Imp ", await tournamentFactory.getImplementation());
   //   console.log(
@@ -117,20 +122,20 @@ async function main() {
   //const options = { value: Web3.utils.toWei("0.01", "ether") };
   // ENTRY_FEES = 0.01 * 10 ** 8;
   //INITIAL_INVESTED_AMOUNT = 0.1 * 10 ** 8;
-  // const createPoolTxn = await tournamentFactory
-  //   .connect(owner)
-  //   .createTournamentPool(
-  //     "URI",
-  //     1651840820,
-  //     1651841195,
-  //     ENTRY_FEES,
-  //     token,
-  //     INITIAL_INVESTED_AMOUNT,
-  //     aToken,
-  //     false
-  //   );
+  const createPoolTxn = await tournamentFactory
+    .connect(owner)
+    .createTournamentPool(
+      "URI",
+      1651840820,
+      1651841195,
+      ENTRY_FEES,
+      token,
+      INITIAL_INVESTED_AMOUNT,
+      aToken,
+      false
+    );
 
-  // await createPoolTxn.wait();
+  await createPoolTxn.wait();
 
   // const createPoolTxn2 = await tournamentFactory
   //   .connect(owner)
@@ -153,10 +158,10 @@ async function main() {
   // //   secondOwner.address
   // // );
 
-  // const tournamentAddress = await tournamentFactory
-  //   .connect(owner)
-  //   .tournamentsArray(0);
-  // console.log("Proxy Tournament Adress-1", tournamentAddress);
+  const tournamentAddress = await tournamentFactory
+    .connect(owner)
+    .tournamentsArray(0);
+  console.log("Proxy Tournament Adress-1", tournamentAddress);
 
   // const tournamentAddress2 = await tournamentFactory
   //   .connect(owner)

@@ -19,7 +19,7 @@ async function main() {
   const proxyAddress = "0x60ad020656bc2B3429e596d7EBE5279d9D675DB8";
   const tournamentProxyAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
   // const tournamentProxyAddress1 = "0x26D2260dc3072F7EE4c29819255BFE08a07D16dc";
-  const beaconAddress = "0x4F308EA0c301c9154A5639cf1f9064F49C516a13";
+  const beaconAddress = "0x8D2FCf4eF0D71B20144D4352c53843A11DB9e8a6";
   // const FactoryV2 = await ethers.getContractFactory(
   //   "CreateTournamentFactoryv2"
   // );
@@ -41,7 +41,7 @@ async function main() {
   //   tournamentProxyAddress
   // );
 
-  const Tournamentv2 = await ethers.getContractFactory("Tournamentv2");
+  const Tournamentv2 = await ethers.getContractFactory("Tournament");
 
   const newTournamentDeployed = await Tournamentv2.deploy();
 
@@ -52,22 +52,22 @@ async function main() {
   const updateTxn = await beaconContract.update(newTournamentDeployed.address);
   await updateTxn.wait();
 
-  const TournamentV2 = await ethers.getContractFactory("Tournamentv2");
-  const tournamentV2ProxyContract = await TournamentV2.attach(
-    tournamentProxyAddress
-  );
-  console.log(
-    "URI tournament ",
-    await tournamentV2ProxyContract.tournamentURI()
-  );
+  // const TournamentV2 = await ethers.getContractFactory("Tournamentv2");
+  // const tournamentV2ProxyContract = await TournamentV2.attach(
+  //   tournamentProxyAddress
+  // );
+  // console.log(
+  //   "URI tournament ",
+  //   await tournamentV2ProxyContract.tournamentURI()
+  // );
 
-  const txn = await tournamentV2ProxyContract.upgradeUri("new URI");
-  await txn.wait();
+  // const txn = await tournamentV2ProxyContract.upgradeUri("new URI");
+  // await txn.wait();
 
-  console.log(
-    " New URI tournament ",
-    await tournamentV2ProxyContract.tournamentURI()
-  );
+  // console.log(
+  //   " New URI tournament ",
+  //   await tournamentV2ProxyContract.tournamentURI()
+  // );
 
   // const tournamentV2ProxyContract1 = await TournamentV2.attach(
   //   tournamentProxyAddress1

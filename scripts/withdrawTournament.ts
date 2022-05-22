@@ -9,7 +9,7 @@ import Tournament from "../artifacts/contracts/Tournament.sol/Tournament.json";
 import { AbiItem } from "web3-utils";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
+const tournamentAddress = "0xF655d758Fd8E874Ae572911d91a77C221a6968c0";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 const privateKey = process.env.PRIVATE_KEY;
@@ -50,7 +50,7 @@ async function executeAdminTxn(ownerAddress: string, rewardValue: number) {
 async function main() {
   await run("compile");
 
-  const tournamentFactory = await ethers.getContractFactory("Tournamentv2");
+  const tournamentFactory = await ethers.getContractFactory("Tournament");
   const tournament = tournamentFactory.attach(tournamentAddress);
 
   const [owner, secondOwner] = await ethers.getSigners();
@@ -87,8 +87,11 @@ async function main() {
     signature
   );
   console.log("verification ", signatureVerification);
-  const firstAddressTournamentEntry = await tournament.withdraw2(signature);
+  console.log("Has withdrawn ", await tournament.hasUserWithdrawn());
+  const firstAddressTournamentEntry = await tournament.withdrawFunds(signature);
   await firstAddressTournamentEntry.wait();
+  console.log("Has withdrawn ", await tournament.hasUserWithdrawn());
+
   // const secondAddressTournamentEntry = await tournament
   //   .connect(secondOwner)
   //   .withdrawFunds(60);
