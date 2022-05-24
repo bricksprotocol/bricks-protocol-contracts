@@ -253,7 +253,10 @@ contract Tournament is Initializable, OwnableUpgradeable {
         //Verify verify = Verify(verificationAddress);
         require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
 
-        require(participantFees[msg.sender], "Participant isn't registered");
+        require(
+            (msg.sender == creator) ? true : participantFees[msg.sender],
+            "Participant or Creator isn't registered"
+        );
 
         require(
             msg.sender == creator
