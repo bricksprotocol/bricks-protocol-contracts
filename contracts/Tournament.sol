@@ -27,37 +27,37 @@ contract Tournament is Initializable, OwnableUpgradeable {
     string public tournamentURI;
     uint256 private tournamentStart;
     uint256 private tournamentEnd;
-    uint256 private tournamentEntryFees;
-    uint256 private initialVestedAmount;
+    uint256 internal tournamentEntryFees;
+    uint256 internal initialVestedAmount;
     //bool internal initialVestedRefund = false;
     address payable[] public participants;
-    mapping(address => bool) private participantFees;
+    mapping(address => bool) internal participantFees;
     struct Creator {
         address creator;
         bool hasCreatorWithdrawn;
     }
-    address private creator;
-    address private asset;
-    address private lending_pool_address;
+    address internal creator;
+    address internal asset;
+    address internal lending_pool_address;
     //mapping(bytes32 => address) requestMapping;
     uint256 public protocolFees;
     //address private oracle;
     //bytes32 private jobId;
     //uint256 private fee;
     // address public linkTokenAddress;
-    uint256 totalWithdrawnAmount = 0;
+    uint256 private totalWithdrawnAmount = 0;
     // address private verificationAddress;
-    address private aAssetAddress;
-    bool private isNativeAsset;
-    bool private hasCreatorWithdrawn;
-    uint256 public _allowance;
-    bytes32 public constant ADMIN_ROLE = keccak256("MY_ROLE");
+    address internal aAssetAddress;
+    bool internal isNativeAsset;
+    bool internal hasCreatorWithdrawn;
+    uint256 internal _allowance;
+    bytes32 internal constant ADMIN_ROLE = keccak256("MY_ROLE");
     // custom variables for testing only
     // uint256 public fraction;
     // string public data;
     //  uint256 private finalAmount;
-    mapping(address => bool) public participantWithdrawnStatus;
-    mapping(address => uint256) private participantRewardMapping;
+    mapping(address => bool) internal participantWithdrawnStatus;
+    mapping(address => uint256) internal participantRewardMapping;
 
     // // initializing oracle, jobid and fee for the required network
     // constructor(
@@ -81,7 +81,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
     // @dev tournamentURI will contain all the details pertaining to an tournament
     // {"name": "tournament_name", "description" : "tournament_description", "trading_assets": [], "image": "image_url"}
 
-    function initialize() external initializer {
+    function initialize() external virtual initializer {
         __Ownable_init();
     }
 
@@ -164,7 +164,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         );
     }
 
-    function joinTournament() public payable {
+    function joinTournament() public payable virtual {
         IERC20 ierc20 = IERC20(asset);
 
         // check if the values match
@@ -213,7 +213,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         emit ParticipantJoined(msg.sender, tournamentEntryFees);
     }
 
-    function withdrawFunds(bytes memory sig) public {
+    function withdrawFunds(bytes memory sig) public virtual {
         // IERC20 ierc20 = IERC20(_aave_asset);
         // uint256 balance = ierc20.balanceOf(address(this));
         // ILendingPool(lending_pool_address).withdraw(asset, balance, _address);
@@ -291,7 +291,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
     //     return creator;
     // }
 
-    function withdrawInitialVestedAmount() private {
+    function withdrawInitialVestedAmount() internal virtual {
         //ERC20 ierc20 = ERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
 
         if (msg.sender == creator && initialVestedAmount > 0) {
@@ -319,7 +319,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         }
     }
 
-    function withdrawFromAave(uint256 amountToWithdraw) private {
+    function withdrawFromAave(uint256 amountToWithdraw) internal virtual {
         if (isNativeAsset) {
             IAToken aWETH = IAToken(aAssetAddress);
             IERC20 ierc20 = IERC20(asset);

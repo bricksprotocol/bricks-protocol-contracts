@@ -6,6 +6,7 @@ import "./interfaces/IPoolAddressesProvider.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./TournamentBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "./RecurringTournament.sol";
 
 //import "@openzeppelin/upgrades/contracts/upgradeability/ProxyFactory.sol";
 
@@ -80,7 +81,8 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         address _asset,
         uint256 _initial_invested_amount,
         address _aAssetAddress,
-        bool _isNativeAsset
+        bool _isNativeAsset,
+        bool _isRecurring
     ) public payable {
         BeaconProxy tournamentProxy = new BeaconProxy(
             address(tournamentBeacon),
@@ -88,20 +90,37 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         );
         tournamentsArray.push(tournamentProxy);
         tournamentsMapping[address(tournamentProxy)] = true;
-        Tournament(address(tournamentProxy)).createPool({
-            _tournamentURI: _tournamentURI,
-            _tournamentStart: _tournamentStart,
-            _tournamentEnd: _tournamentEnd,
-            _tournamentEntryFees: _tournamentEntryFees,
-            _lending_pool_address: lendingPoolAddress,
-            _dataProvider: dataProvider,
-            _asset: _asset,
-            _initial_invested_amount: _initial_invested_amount,
-            _protocolFees: protocolFees,
-            _sender: msg.sender,
-            _aAssetAddress: _aAssetAddress,
-            _isNativeAsset: _isNativeAsset
-        });
+        if (!_isRecurring) {
+            Tournament(address(tournamentProxy)).createPool({
+                _tournamentURI: _tournamentURI,
+                _tournamentStart: _tournamentStart,
+                _tournamentEnd: _tournamentEnd,
+                _tournamentEntryFees: _tournamentEntryFees,
+                _lending_pool_address: lendingPoolAddress,
+                _dataProvider: dataProvider,
+                _asset: _asset,
+                _initial_invested_amount: _initial_invested_amount,
+                _protocolFees: protocolFees,
+                _sender: msg.sender,
+                _aAssetAddress: _aAssetAddress,
+                _isNativeAsset: _isNativeAsset
+            });
+        } else {
+            RecurringTournament(address(tournamentProxy)).createPool({
+                _tournamentURI: _tournamentURI,
+                _tournamentStart: _tournamentStart,
+                _tournamentEnd: _tournamentEnd,
+                _tournamentEntryFees: _tournamentEntryFees,
+                _lending_pool_address: lendingPoolAddress,
+                _dataProvider: dataProvider,
+                _asset: _asset,
+                _initial_invested_amount: _initial_invested_amount,
+                _protocolFees: protocolFees,
+                _sender: msg.sender,
+                _aAssetAddress: _aAssetAddress,
+                _isNativeAsset: _isNativeAsset
+            });
+        }
         if (_initial_invested_amount != 0) {
             if (_isNativeAsset) {
                 WETHGateway gateway = new WETHGateway(_asset, address(this));

@@ -132,6 +132,7 @@ async function main() {
       token,
       INITIAL_INVESTED_AMOUNT,
       aToken,
+      false,
       false
     );
 
