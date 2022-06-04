@@ -3,10 +3,10 @@ import { config } from "../config";
 import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
-const tournamentAddress = "0xF655d758Fd8E874Ae572911d91a77C221a6968c0";
+const tournamentAddress = "0xDca0ffE9FF4968A614d2C1269B8de448771A5a89";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
-let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
+let ENTRY_FEES: any = Web3.utils.toWei("0.01", "ether");
 
 async function main() {
   await run("compile");
@@ -19,18 +19,18 @@ async function main() {
   const daiToken = new ethers.Contract(token, usdcAbi, owner);
   // ENTRY_FEES = 0.01 * 10 ** 8;
 
-  const approveTxn = await daiToken.approve(
-    tournamentAddress,
-    // ethers.utils.parseEther("0.001")
-    ethers.BigNumber.from(ENTRY_FEES).toString()
-  );
+  // const approveTxn = await daiToken.approve(
+  //   tournamentAddress,
+  //   // ethers.utils.parseEther("0.001")
+  //   ethers.BigNumber.from(ENTRY_FEES).toString()
+  // );
 
-  await approveTxn.wait();
-  //const options = { value: ENTRY_FEES };
+  // await approveTxn.wait();
+  const options = { value: ENTRY_FEES };
 
   const firstAddressTournamentEntry = await tournament
     .connect(owner)
-    .joinTournament();
+    .joinTournament(options);
   await firstAddressTournamentEntry.wait();
 
   // const daiToken2 = new ethers.Contract(

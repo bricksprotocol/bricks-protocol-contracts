@@ -19,7 +19,8 @@ async function main() {
   const proxyAddress = "0x60ad020656bc2B3429e596d7EBE5279d9D675DB8";
   const tournamentProxyAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
   // const tournamentProxyAddress1 = "0x26D2260dc3072F7EE4c29819255BFE08a07D16dc";
-  const beaconAddress = "0x8D2FCf4eF0D71B20144D4352c53843A11DB9e8a6";
+  //const beaconAddress = "0x8D2FCf4eF0D71B20144D4352c53843A11DB9e8a6";
+  const beaconAddress = "0x956Bfaa1441FE6f711f4224A7a84A7A93C44A612";
   // const FactoryV2 = await ethers.getContractFactory(
   //   "CreateTournamentFactoryv2"
   // );

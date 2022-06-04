@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
-//import {Ownable} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/Ownable.sol";
 import {IERC20} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
 import {IWeth} from "./interfaces/IWeth.sol";
 import {IWETHGateway} from "./interfaces/IWethGateway.sol";
@@ -11,28 +10,31 @@ import {IAToken} from "@aave/core-v3/contracts/interfaces/IAToken.sol";
 import {ReserveConfiguration} from "@aave/core-v3/contracts/protocol/libraries/configuration/ReserveConfiguration.sol";
 import {UserConfiguration} from "@aave/core-v3/contracts/protocol/libraries/configuration/UserConfiguration.sol";
 import {DataTypes} from "@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol";
-import {DataTypesHelper} from "./libraries/DataTypesHelper.sol";
 
 contract WETHGateway is IWETHGateway, Ownable {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using UserConfiguration for DataTypes.UserConfigurationMap;
 
-    uint256 public _balance;
-
-    IWeth internal immutable WETH;
+    IWeth internal immutable weth;
 
     /**
-     * @dev Sets the WETH address and the PoolAddressesProvider address. Infinite approves pool.
-     * @param weth Address of the Wrapped Ether contract
-     * @param owner Address of the owner of this contract
+     * @dev Sets the weth address and the PoolAddressesProvider address. Infinite approves pool.
+     * @param wethAddress Address of the Wrapped Ether contract
+     * @param owner Address of the owner of address(this) contract
      **/
-    constructor(address weth, address owner) {
-        WETH = IWeth(weth);
+    constructor(address wethAddress, address owner) {
+        weth = IWeth(wethAddress);
         transferOwnership(owner);
     }
 
-    function authorizePool(address pool) external onlyOwner {
-        WETH.approve(pool, type(uint256).max);
+    modifier validAddress(address impl) {
+        require(impl != address(0), "Address is 0");
+        _;
+    }
+
+    function authorizePool(address pool) external onlyOwner returns (bool) {
+        bool approved = weth.approve(pool, type(uint256).max);
+        return approved;
     }
 
     /**
@@ -46,9 +48,9 @@ contract WETHGateway is IWETHGateway, Ownable {
         address pool,
         address onBehalfOf,
         uint16 referralCode
-    ) external payable override {
-        WETH.deposit{value: msg.value}();
-        IPool(pool).deposit(address(WETH), msg.value, onBehalfOf, referralCode);
+    ) external payable override onlyOwner {
+        weth.deposit{value: msg.value}();
+        IPool(pool).deposit(address(weth), msg.value, onBehalfOf, referralCode);
     }
 
     /**
@@ -61,9 +63,9 @@ contract WETHGateway is IWETHGateway, Ownable {
         address pool,
         uint256 amount,
         address to
-    ) external override {
+    ) external override onlyOwner validAddress(to) {
         IAToken aWETH = IAToken(
-            IPool(pool).getReserveData(address(WETH)).aTokenAddress
+            IPool(pool).getReserveData(address(weth)).aTokenAddress
         );
         uint256 ownerBalance = aWETH.balanceOf(owner());
         uint256 amountToWithdraw = amount;
@@ -72,11 +74,27 @@ contract WETHGateway is IWETHGateway, Ownable {
         if (amount == type(uint256).max) {
             amountToWithdraw = ownerBalance;
         }
-        aWETH.transferFrom(owner(), address(this), amountToWithdraw);
-        IPool(pool).withdraw(address(WETH), amountToWithdraw, address(this));
-        WETH.approve(address(this), amountToWithdraw);
-        WETH.withdraw(amountToWithdraw);
-        _safeTransferETH(to, amountToWithdraw);
+        bool transferStatus = aWETH.transferFrom(
+            owner(),
+            address(this),
+            amountToWithdraw
+        );
+
+        if (transferStatus) {
+            uint256 amountWithdrawn = IPool(pool).withdraw(
+                address(weth),
+                amountToWithdraw,
+                address(this)
+            );
+            bool approved = weth.approve(address(this), amountToWithdraw);
+            if (approved && amountWithdrawn > 0) {
+                weth.withdraw(amountToWithdraw);
+                (bool success, ) = to.call{value: amountToWithdraw}(
+                    new bytes(0)
+                );
+                require(success, "ETH_TRANSFER_FAILED");
+            }
+        }
     }
 
     /**
@@ -84,16 +102,19 @@ contract WETHGateway is IWETHGateway, Ownable {
      * @param to recipient of the transfer
      * @param value the amount to send
      */
-    function _safeTransferETH(address to, uint256 value) internal {
-        (bool success, ) = to.call{value: value}(new bytes(0));
-        require(success, "ETH_TRANSFER_FAILED");
-    }
+    // function _safeTransferETH(address to, uint256 value) internal {
+    //     require(participantsRegistered[to], "Particpant isn't registered");
+    //     if (participantsRegistered[to]) {
+    //         (bool success, ) = to.call{value: value}(new bytes(0));
+    //         require(success, "ETH_TRANSFER_FAILED");
+    //     }
+    // }
 
     /**
-     * @dev Only WETH contract is allowed to transfer ETH here. Prevent other addresses to send Ether to this contract.
+     * @dev Only WETH contract is allowed to transfer ETH here. Prevent other addresses to send Ether to address(this) contract.
      */
     receive() external payable {
-        require(msg.sender == address(WETH), "Receive not allowed");
+        require(msg.sender == address(weth), "Receive not allowed");
     }
 
     /**

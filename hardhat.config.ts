@@ -45,15 +45,22 @@ const config: HardhatUserConfig = {
           optimizer: {
             enabled: true,
             runs: 200,
+            details: {
+              yul: true,
+              yulDetails: {
+                stackAllocation: true,
+                optimizerSteps: "dhfoDgvulfnTUtnIf",
+              },
+            },
           },
         },
       },
-      {
-        version: "0.6.12",
-      },
-      {
-        version: "0.5.0",
-      },
+      // {
+      //   version: "0.6.12",
+      // },
+      // {
+      //   version: "0.5.0",
+      // },
       // },
       // {
       //   version: "0.5.2",

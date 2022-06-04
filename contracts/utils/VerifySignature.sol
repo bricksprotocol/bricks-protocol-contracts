@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: BUSL-1.1
-pragma solidity >=0.6.12;
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.10;
 
-library Verify {
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+library VerifySignature {
     using ECDSA for bytes32;
 
-    function verifyMessage(uint256 message, bytes memory signature)
-        public
+    function verifyMessage(string memory message, bytes memory signature)
+        internal
         view
         returns (bool)
     {
         //hash the plain text message
-        bytes32 messagehash = keccak256(bytes(Strings.toString(message)));
+        bytes32 messagehash = keccak256(bytes(message));
 
         address signeraddress = messagehash.toEthSignedMessageHash().recover(
             signature
@@ -22,7 +22,7 @@ library Verify {
             //The message is authentic
             return true;
         } else {
-            //msg.sender didnt sign this message.
+            //msg.sender didnt sign address(this) message.
             return false;
         }
     }

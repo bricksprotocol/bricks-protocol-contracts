@@ -1,4 +1,5 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
@@ -7,18 +8,27 @@ contract TournamentBeacon is Ownable, IBeacon {
     UpgradeableBeacon beacon;
     address public blueprint;
 
-    constructor(address _initBlueprint) {
+    modifier validAddress(address impl) {
+        require(impl != address(0), "Not a valid address");
+        _;
+    }
+
+    constructor(address _initBlueprint) validAddress(_initBlueprint) {
         beacon = new UpgradeableBeacon(_initBlueprint);
         blueprint = _initBlueprint;
         transferOwnership(tx.origin);
     }
 
-    function update(address _newBlueprint) public onlyOwner {
-        beacon.upgradeTo(_newBlueprint);
-        blueprint = _newBlueprint;
+    function update(address newBlueprint)
+        external
+        onlyOwner
+        validAddress(newBlueprint)
+    {
+        blueprint = newBlueprint;
+        beacon.upgradeTo(newBlueprint);
     }
 
-    function implementation() public view override returns (address) {
+    function implementation() external view override returns (address) {
         return blueprint;
     }
 }

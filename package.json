@@ -56,11 +56,11 @@
   "packageManager": "yarn@3.1.1",
   "dependencies": {
     "@aave/core-v3": "^1.13.1",
-    "@chainlink/contracts": "^0.4.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/upgrades": "^2.8.0",
     "eth-crypto": "^2.2.0",
     "ethers": "^5.6.5",
+    "solc": "^0.8.14-fixed",
     "web3": "^1.7.3"
   }
 }

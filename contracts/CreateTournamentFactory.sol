@@ -1,67 +1,56 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
+pragma solidity ^0.8.10;
 import "./Tournament.sol";
-import "./interfaces/IPoolAddressesProvider.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import "./TournamentBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-
-//import "@openzeppelin/upgrades/contracts/upgradeability/ProxyFactory.sol";
-
-//import "./WETHGateway.sol";
 
 contract CreateTournamentFactory is OwnableUpgradeable {
     BeaconProxy[] public tournamentsArray;
     mapping(address => bool) tournamentsMapping;
-    event tournamentCreated(address tournamentAddress);
+    event TournamentCreated(address tournamentAddress);
+    event ProtocolFeesUpdated(uint256 protocolFees);
     IERC20 ierc20;
-    // IWETH iweth;
-
     address lendingPoolAddressProvider;
     address public lendingPoolAddress;
     address dataProvider;
-    //address linkTokenAddress;
-    // uint256 linkFundValue;
     uint256 public protocolFees; // 10% - 1000 (support upto 2 decimal places)
-    address private verifySignatureAddress;
     address private implementationContract;
     TournamentBeacon public tournamentBeacon;
 
-    // address private oracle;
-    // bytes32 private jobId;
-    // uint256 private fee;
+    modifier validAddress(address impl) {
+        require(impl != address(0), "Address is 0");
+        _;
+    }
 
-    function initialize(address impl) public initializer {
+    function initialize(address impl) external initializer validAddress(impl) {
         tournamentBeacon = new TournamentBeacon(impl);
         implementationContract = impl;
-        //_transferOwnership(tx.origin);
         __Ownable_init();
     }
 
-    // constructor(address impl) {
-    //     tournamentBeacon = new TournamentBeacon(impl);
-    //     //beacon = new UpgradeableBeacon(impl);
-    //     implementationContract = impl;
-    // }
-
-    function setProtocolFees(uint256 _protocolFees) public onlyOwner {
+    function setProtocolFees(uint256 _protocolFees) external onlyOwner {
+        emit ProtocolFeesUpdated(_protocolFees);
         protocolFees = _protocolFees;
     }
 
     function setLendingPoolAddressProvider(address _lendingPoolAddressProvider)
-        public
+        external
         onlyOwner
+        validAddress(_lendingPoolAddressProvider)
     {
         lendingPoolAddressProvider = _lendingPoolAddressProvider;
-        lendingPoolAddress = IPoolAddressesProvider(_lendingPoolAddressProvider)
+        lendingPoolAddress = IPoolAddressesProvider(lendingPoolAddressProvider)
             .getPool();
-        dataProvider = IPoolAddressesProvider(_lendingPoolAddressProvider)
+        require(lendingPoolAddress != address(0), "Lending Pool Address is 0");
+        dataProvider = IPoolAddressesProvider(lendingPoolAddressProvider)
             .getPoolDataProvider();
+        require(dataProvider != address(0), "Data Provider Address is 0");
     }
 
     function getLendingPoolAddressProvider()
-        public
+        external
         view
         returns (
             address,
@@ -73,68 +62,76 @@ contract CreateTournamentFactory is OwnableUpgradeable {
     }
 
     function createTournamentPool(
-        string memory _tournamentURI,
-        uint256 _tournamentStart,
-        uint256 _tournamentEnd,
-        uint256 _tournamentEntryFees,
-        address _asset,
-        uint256 _initial_invested_amount,
-        address _aAssetAddress,
-        bool _isNativeAsset
-    ) public payable {
+        string memory tournamentUri,
+        uint256 tournamentStart,
+        uint256 tournamentEnd,
+        uint256 tournamentEntryFees,
+        address asset,
+        uint256 initialInvestedAmount,
+        address aAssetAddress,
+        bool isNativeAsset
+    ) external payable {
+        ierc20 = IERC20(asset);
         BeaconProxy tournamentProxy = new BeaconProxy(
             address(tournamentBeacon),
             abi.encodeWithSelector(Tournament(address(0)).initialize.selector)
         );
         tournamentsArray.push(tournamentProxy);
         tournamentsMapping[address(tournamentProxy)] = true;
+        emit TournamentCreated(address(tournamentProxy));
+        WETHGateway gateway = new WETHGateway(asset, address(this));
         Tournament(address(tournamentProxy)).createPool({
-            _tournamentURI: _tournamentURI,
-            _tournamentStart: _tournamentStart,
-            _tournamentEnd: _tournamentEnd,
-            _tournamentEntryFees: _tournamentEntryFees,
-            _lending_pool_address: lendingPoolAddress,
-            _dataProvider: dataProvider,
-            _asset: _asset,
-            _initial_invested_amount: _initial_invested_amount,
-            _protocolFees: protocolFees,
-            _sender: msg.sender,
-            _aAssetAddress: _aAssetAddress,
-            _isNativeAsset: _isNativeAsset
+            uri: tournamentUri,
+            startTime: tournamentStart,
+            endTime: tournamentEnd,
+            entryFees: tournamentEntryFees,
+            lendPoolAddress: lendingPoolAddress,
+            dataProvider: dataProvider,
+            assetAddress: asset,
+            initialInvestedAmount: initialInvestedAmount,
+            fees: protocolFees,
+            sender: msg.sender,
+            aAsset: aAssetAddress,
+            nativeAsset: isNativeAsset
         });
-        if (_initial_invested_amount != 0) {
-            if (_isNativeAsset) {
-                WETHGateway gateway = new WETHGateway(_asset, address(this));
-                gateway.authorizePool(lendingPoolAddress);
-                gateway.depositETH{value: msg.value}(
-                    lendingPoolAddress,
-                    address(tournamentProxy),
-                    0
-                );
+        if (initialInvestedAmount > 0) {
+            if (isNativeAsset) {
+                bool approved = gateway.authorizePool(lendingPoolAddress);
+
+                if (approved) {
+                    gateway.depositETH{value: msg.value}(
+                        lendingPoolAddress,
+                        address(tournamentProxy),
+                        0
+                    );
+                }
             } else {
-                ierc20 = IERC20(_asset);
                 require(
                     ierc20.transferFrom(
                         msg.sender,
                         address(this),
-                        _initial_invested_amount
+                        initialInvestedAmount
                     ),
                     "Transfer failed!"
                 );
-                ierc20.approve(lendingPoolAddress, _initial_invested_amount);
-                IPool(lendingPoolAddress).supply(
-                    _asset,
-                    _initial_invested_amount,
-                    address(tournamentProxy),
-                    0
+                bool approved = ierc20.approve(
+                    lendingPoolAddress,
+                    initialInvestedAmount
                 );
+                if (approved) {
+                    IPool(lendingPoolAddress).supply(
+                        asset,
+                        initialInvestedAmount,
+                        address(tournamentProxy),
+                        0
+                    );
+                }
             }
         }
-        emit tournamentCreated(address(tournamentProxy));
     }
 
-    function getTournamentDetails(uint256 _index)
-        public
+    function getTournamentDetails(uint256 index)
+        external
         view
         returns (
             address,
@@ -148,12 +145,11 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         )
     {
         return
-            Tournament(address(tournamentsArray[_index]))
-                .getTournamentDetails();
+            Tournament(address(tournamentsArray[index])).getTournamentDetails();
     }
 
     function getTournamentDetailsByAddress(address _tournament)
-        public
+        external
         view
         returns (
             address,
@@ -173,7 +169,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         return Tournament(_tournament).getTournamentDetails();
     }
 
-    function getImplementation() public view returns (address) {
+    function getImplementation() external view returns (address) {
         return tournamentBeacon.blueprint();
     }
 }
