@@ -34,6 +34,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
     mapping(address => bool) private participantWithdrawnStatus;
     mapping(address => uint256) private participantRewardMapping;
     bool public isCompleted;
+    uint256 private totalPeopleWithdrawn;
 
     modifier validAddresses(address[5] memory pAddresses) {
         for (uint256 i = 0; i < pAddresses.length; i++) {
@@ -52,10 +53,6 @@ contract Tournament is Initializable, OwnableUpgradeable {
 
     function initialize() external initializer {
         __Ownable_init();
-    }
-
-    function setCompletionStatus() external onlyAdmin {
-        isCompleted = true;
     }
 
     function setParticipantReward(
@@ -84,6 +81,8 @@ contract Tournament is Initializable, OwnableUpgradeable {
             [lendPoolAddress, dataProvider, assetAddress, sender, aAsset]
         )
     {
+        require(startTime >= block.timestamp, "Start time has already passed!");
+
         require(
             endTime > startTime,
             "Tournament should end after start point!"
@@ -194,9 +193,9 @@ contract Tournament is Initializable, OwnableUpgradeable {
     }
 
     function withdrawFunds(bytes memory sig) external {
-        //require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
+        require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
 
-        require(isCompleted, "Tournament isn't completed");
+        //require(isCompleted, "Tournament isn't completed");
 
         require(
             (msg.sender == creator) ? true : participantFees[msg.sender],
@@ -223,6 +222,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
             emit InitiateWithdraw(msg.sender, initialVestedAmount);
             hasCreatorWithdrawn = true;
             amountToWithdraw += initialVestedAmount;
+            totalPeopleWithdrawn += 1;
         }
 
         if (participantFees[msg.sender]) {
@@ -230,6 +230,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
             amountToWithdraw += computeEntryFeesWithRewards(
                 participantRewardMapping[msg.sender]
             );
+            totalPeopleWithdrawn += 1;
         }
 
         //withdrawEntryFeesWithRewards(participantRewardMapping[msg.sender]);
@@ -242,6 +243,16 @@ contract Tournament is Initializable, OwnableUpgradeable {
         withdrawFromAave(amountToWithdraw);
     }
 
+    function withdrawAdminFunds() external onlyAdmin {
+        require(
+            totalPeopleWithdrawn >=
+                participants.length + ((initialVestedAmount > 0) ? 1 : 0),
+            "Everyone hasnt'withdrawn their yield"
+        );
+        IERC20 ierc20 = IERC20(aAssetAddress);
+        withdrawFromAave((ierc20.balanceOf(address(this))));
+    }
+
     // function withdrawInitialVestedAmount() private {
     //     if (msg.sender == creator && initialVestedAmount > 0) {
     //         totalWithdrawnAmount += initialVestedAmount;
@@ -250,7 +261,8 @@ contract Tournament is Initializable, OwnableUpgradeable {
     // }
 
     function computeEntryFeesWithRewards(uint256 rewardsPercentage)
-        private
+        public
+        view
         returns (uint256)
     {
         uint256 amountToWithdraw = 0;
@@ -301,5 +313,22 @@ contract Tournament is Initializable, OwnableUpgradeable {
         }
 
         return participantWithdrawnStatus[msg.sender];
+    }
+
+    function setCompletionStatus() external onlyAdmin {
+        isCompleted = true;
+    }
+
+    function totalBalance() external view returns (uint256) {
+        IERC20 ierc20 = IERC20(aAssetAddress);
+        return ierc20.balanceOf(address(this));
+    }
+
+    function totalWithdrawnAmountFn() external view returns (uint256) {
+        return totalWithdrawnAmount;
+    }
+
+    function participantRewardMappingFn() external view returns (uint256) {
+        return participantRewardMapping[msg.sender];
     }
 }
