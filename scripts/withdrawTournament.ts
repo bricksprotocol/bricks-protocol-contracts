@@ -9,31 +9,38 @@ import Tournament from "../artifacts/contracts/Tournament.sol/Tournament.json";
 import { AbiItem } from "web3-utils";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0xDca0ffE9FF4968A614d2C1269B8de448771A5a89";
+const tournamentAddress = "0xE41f86744E2eCcDDa6cA8DEb64B438E7f5530e6E";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 const privateKey = process.env.PRIVATE_KEY;
 
-async function executeAdminTxn(ownerAddress: string, rewardValue: number) {
+async function executeAdminTxn(
+  ownerAddress: string,
+  rewardValue: number,
+  participantAddress: string
+) {
   const web3 = new Web3("https://matic-mumbai.chainstacklabs.com/");
   const networkId = await web3.eth.net.getId();
   const myContract = new web3.eth.Contract(
     Tournament.abi as unknown as AbiItem[],
     tournamentAddress
   );
-  const tx = myContract.methods.setParticipantReward(rewardValue, ownerAddress);
+  const tx = myContract.methods.setParticipantReward(
+    rewardValue,
+    participantAddress
+  );
   const gas = await tx.estimateGas({ from: ownerAddress });
   const gasPrice = await web3.eth.getGasPrice();
   const data = tx.encodeABI();
-  const nonce = await web3.eth.getTransactionCount(ownerAddress);
+  //const nonce = await web3.eth.getTransactionCount(ownerAddress);
 
   const signedTx = await web3.eth.accounts.signTransaction(
     {
       to: myContract.options.address,
       data,
       gas,
-      gasPrice,
-      nonce,
+      //gasPrice,
+      //nonce,
       chainId: networkId,
     },
     privateKey!
@@ -57,15 +64,15 @@ async function executeAdminTxnForCompletionStatus(ownerAddress: string) {
   const gas = await tx.estimateGas({ from: ownerAddress });
   const gasPrice = await web3.eth.getGasPrice();
   const data = tx.encodeABI();
-  const nonce = await web3.eth.getTransactionCount(ownerAddress);
+  //const nonce = await web3.eth.getTransactionCount(ownerAddress);
 
   const signedTx = await web3.eth.accounts.signTransaction(
     {
       to: myContract.options.address,
       data,
       gas,
-      gasPrice,
-      nonce,
+      //gasPrice,
+      // nonce,
       chainId: networkId,
     },
     privateKey!
@@ -84,72 +91,114 @@ async function main() {
   const tournamentFactory = await ethers.getContractFactory("Tournament");
   const tournament = tournamentFactory.attach(tournamentAddress);
 
-  const [owner, secondOwner] = await ethers.getSigners();
-  console.log("Owner", owner.address, secondOwner.address);
-  console.log("Tr owner ", await tournament.owner());
-  // console.log(
-  //   "Asset",
-  //   await tournament.asset(),
-  //   "LP address ",
-  //   await tournament.lending_pool_address()
-  // );
-  const adaiToken = new ethers.Contract(aToken, usdcAbi, owner);
-  const daiToken = new ethers.Contract(token, usdcAbi, owner);
+  const signers = await ethers.getSigners();
+  const messages = [2000, 1200, 3100, 1800, 1900];
+  let ownerBalance = 0;
+  for (let i = 0; i < signers.length; i++) {
+    //console.log("Owner", owner.address, secondOwner.address);
+    console.log("Tr owner ", await tournament.owner());
+    // console.log(
+    //   "Asset",
+    //   await tournament.asset(),
+    //   "LP address ",
+    //   await tournament.lending_pool_address()
+    // );
+    const adaiToken = new ethers.Contract(aToken, usdcAbi, signers[i]);
+    const daiToken = new ethers.Contract(token, usdcAbi, signers[i]);
 
-  console.log("Balance ", await adaiToken.balanceOf(tournamentAddress));
+    console.log("Balance ", await adaiToken.balanceOf(tournamentAddress));
 
-  // const signerIdentity = EthCrypto.createIdentity();
-  // const message = EthCrypto.hash.keccak256([{ type: "uint256", value: "40" }]);
-  // console.log("pvt key", signeyrIdentity.privateKey);
-  // const signature = EthCrypto.sign(signerIdentity.privateKey, message);
+    // const signerIdentity = EthCrypto.createIdentity();
+    // const message = EthCrypto.hash.keccak256([{ type: "uint256", value: "40" }]);
+    // console.log("pvt key", signeyrIdentity.privateKey);
+    // const signature = EthCrypto.sign(signerIdentity.privateKey, message);
 
-  //await new Promise((r) => setTimeout(r, 900 * 1000));
-  const message: number = 4037;
-  const messageHash = ethers.utils.solidityKeccak256(
-    ["string"],
-    [message.toString()]
-  );
+    //await new Promise((r) => setTimeout(r, 900 * 1000));
+    const message: number = messages[i];
+    const messageHash = ethers.utils.solidityKeccak256(
+      ["string"],
+      [message.toString()]
+    );
 
-  await executeAdminTxn(owner.address, message);
-  const signature = await owner.signMessage(ethers.utils.arrayify(messageHash));
-  console.log("Signature ", signature);
-  // const signatureVerification = await tournament.verifyMessage(
-  //   "4037",
-  //   signature
-  // );
-  // console.log("verification ", signatureVerification);
+    await executeAdminTxn(signers[0].address, message, signers[i].address);
+    const signature = await signers[i].signMessage(
+      ethers.utils.arrayify(messageHash)
+    );
+    console.log("Signature ", signature);
+    // const signatureVerification = await tournament.verifyMessage(
+    //   "4037",
+    //   signature
+    // );
+    // console.log("verification ", signatureVerification);
 
-  const intiialBalance = await daiToken.balanceOf(owner.address);
-  console.log("First Address Intiital Balance ", intiialBalance);
-  console.log("Has withdrawn ", await tournament.hasUserWithdrawn());
-  console.log("Completion status", await tournament.isCompleted());
-  if (!(await tournament.isCompleted())) {
-    console.log("Owner", await tournament.owner());
-    await executeAdminTxnForCompletionStatus(owner.address);
+    const intiialBalance = await daiToken.balanceOf(signers[i].address);
+    console.log(`Signer-${i + 1} Address Intiital Balance `, intiialBalance);
+    console.log(
+      `Signer-${i + 1} Has withdrawn `,
+      await tournament.connect(signers[i]).hasUserWithdrawn()
+    );
+    console.log(
+      `Signer-${i + 1} Completion status`,
+      await tournament.connect(signers[i]).isCompleted()
+    );
+    // if (!(await tournament.connect(signers[i]).isCompleted())) {
+    //   console.log("Owner", await tournament.owner());
+    //   await executeAdminTxnForCompletionStatus(signers[0].address);
+    // }
+    //await executeAdminTxnForCompletionStatus(signers[0].address);
+
+    console.log(
+      `Signer-${i + 1} Completion status`,
+      await tournament.connect(signers[i]).isCompleted()
+    );
+    const firstAddressTournamentEntry = await tournament
+      .connect(signers[i])
+      .withdrawFunds(signature);
+    await firstAddressTournamentEntry.wait();
+    console.log(
+      `Signer-${i + 1} Has withdrawn `,
+      await tournament.connect(signers[i]).hasUserWithdrawn()
+    );
+
+    // const secondAddressTournamentEntry = await tournament
+    //   .connect(secondOwner)
+    //   .withdrawFunds(60);
+    // await secondAddressTournamentEntry.wait();
+
+    //   const secondAddressTournamentEntry = await tournament
+    //     .connect(secondOwner)
+    //     .withdrawFunds(60);
+    //   await secondAddressTournamentEntry.wait();
+
+    console.log(
+      `Signer-${i + 1} First Address After Balance `,
+      await daiToken.balanceOf(signers[i].address)
+    );
+
+    if (i === 0) {
+      ownerBalance = await daiToken.balanceOf(signers[i].address);
+    }
+
+    console.log(
+      `Signer-${i + 1} Balance Diff `,
+      (await daiToken.balanceOf(signers[i].address)) - intiialBalance
+    );
   }
-  console.log("Completion status", await tournament.isCompleted());
-  const firstAddressTournamentEntry = await tournament.withdrawFunds(signature);
-  await firstAddressTournamentEntry.wait();
-  console.log("Has withdrawn ", await tournament.hasUserWithdrawn());
+  const daiToken = new ethers.Contract(token, usdcAbi, signers[0]);
 
-  // const secondAddressTournamentEntry = await tournament
-  //   .connect(secondOwner)
-  //   .withdrawFunds(60);
-  // await secondAddressTournamentEntry.wait();
-
-  //   const secondAddressTournamentEntry = await tournament
-  //     .connect(secondOwner)
-  //     .withdrawFunds(60);
-  //   await secondAddressTournamentEntry.wait();
-
+  console.log("Withdrawing protocol fees ");
+  const protocolWithdrawalTxn = await tournament
+    .connect(signers[0])
+    .withdrawProtocolFees();
   console.log(
-    "First Address After Balance ",
-    await daiToken.balanceOf(owner.address)
+    "After protocol withdrawal baalance ",
+    await daiToken.balanceOf(signers[0].address)
   );
+  await protocolWithdrawalTxn.wait();
 
   console.log(
-    "Balance Diff ",
-    (await daiToken.balanceOf(owner.address)) - intiialBalance
+    "After protocol withdrawal balance diff ",
+    (await daiToken.balanceOf(signers[0].address)) - ownerBalance
   );
 }
 main()

@@ -25,7 +25,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
     address private creator;
     address private asset;
     address private lendingPoolAddress;
-    uint256 public protocolFees;
+    uint256 private protocolFees;
     uint256 private totalWithdrawnAmount = 0;
     address private aAssetAddress;
     bool private isNativeAsset;
@@ -35,6 +35,8 @@ contract Tournament is Initializable, OwnableUpgradeable {
     mapping(address => uint256) private participantRewardMapping;
     bool public isCompleted;
     uint256 private totalPeopleWithdrawn;
+    mapping(address => bool) private isRewardMappingSet;
+    uint256 private protocolRewards;
 
     modifier validAddresses(address[5] memory pAddresses) {
         for (uint256 i = 0; i < pAddresses.length; i++) {
@@ -46,7 +48,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
     modifier onlyAdmin() {
         require(
             msg.sender == 0xAfda3241eAa91e596A6e229b95Bd4eAD7D9EA35F,
-            "Not owner"
+            "Not admin"
         );
         _;
     }
@@ -59,6 +61,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         uint256 withdrawPercentage,
         address participant
     ) external onlyAdmin {
+        isRewardMappingSet[participant] = true;
         participantRewardMapping[participant] = withdrawPercentage;
     }
 
@@ -138,6 +141,11 @@ contract Tournament is Initializable, OwnableUpgradeable {
     function joinTournament() external payable {
         IERC20 ierc20 = IERC20(asset);
 
+        require(
+            block.timestamp <= tournamentEnd,
+            "Tournament has already ended"
+        );
+
         // check if the values match
         uint256 balance = (isNativeAsset)
             ? address(msg.sender).balance
@@ -146,6 +154,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
             balance >= tournamentEntryFees,
             "You do not have enough to join address(this) Event"
         );
+
         // check if the participant is already registered the event
         require(
             !participantFees[msg.sender],
@@ -208,6 +217,9 @@ contract Tournament is Initializable, OwnableUpgradeable {
                 : !participantWithdrawnStatus[msg.sender],
             "Participant or creator has already withdrawn the share"
         );
+
+        require(isRewardMappingSet[msg.sender], "Reward mapping not set");
+
         require(
             VerifySignature.verifyMessage(
                 Strings.toString(participantRewardMapping[msg.sender]),
@@ -243,6 +255,14 @@ contract Tournament is Initializable, OwnableUpgradeable {
         withdrawFromAave(amountToWithdraw);
     }
 
+    function withdrawProtocolFees() external onlyAdmin {
+        if (protocolRewards > 0) {
+            uint256 amountToWithdraw = protocolRewards;
+            protocolRewards = 0;
+            withdrawFromAave(amountToWithdraw);
+        }
+    }
+
     function withdrawAdminFunds() external onlyAdmin {
         require(
             totalPeopleWithdrawn >=
@@ -262,7 +282,6 @@ contract Tournament is Initializable, OwnableUpgradeable {
 
     function computeEntryFeesWithRewards(uint256 rewardsPercentage)
         public
-        view
         returns (uint256)
     {
         uint256 amountToWithdraw = 0;
@@ -273,9 +292,11 @@ contract Tournament is Initializable, OwnableUpgradeable {
             uint256 rewards = (ierc20.balanceOf(address(this)) +
                 totalWithdrawnAmount) -
                 (totalParticipantFees + initialVestedAmount);
+            protocolRewards += ((rewardsPercentage * rewards * protocolFees) /
+                10**6);
             amountToWithdraw =
                 tournamentEntryFees +
-                ((rewardsPercentage * rewards) / 10**4);
+                ((rewardsPercentage * rewards * (100 - protocolFees)) / 10**6);
             // totalWithdrawnAmount += amountToWithdraw;
             // emit Withdraw(msg.sender, amountToWithdraw);
             // emit InitiateWithdraw(msg.sender, amountToWithdraw);
@@ -330,5 +351,12 @@ contract Tournament is Initializable, OwnableUpgradeable {
 
     function participantRewardMappingFn() external view returns (uint256) {
         return participantRewardMapping[msg.sender];
+    }
+
+    function updateProtocolFees(uint256 updatedProtocolFees)
+        external
+        onlyAdmin
+    {
+        protocolFees = updatedProtocolFees;
     }
 }

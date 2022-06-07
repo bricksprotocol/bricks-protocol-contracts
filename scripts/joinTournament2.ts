@@ -3,8 +3,8 @@ import { config } from "../config";
 import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
-let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
+let ENTRY_FEES: any = Web3.utils.toWei("0.001", "ether");
+const tournamentAddress = "0xcc543452dB4D56369aC6Fc681b1862B648c0013a";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 
@@ -36,11 +36,11 @@ async function main() {
   //   // ethers.utils.parseEther("0.001")
   //   ENTRY_FEES
   // );
-  //const options = { value: ENTRY_FEES };
+  const options = { value: ENTRY_FEES };
 
   const secondAddressTournamentEntry = await tournament
     .connect(secondOwner)
-    .joinTournament();
+    .joinTournament(options);
   await secondAddressTournamentEntry.wait();
 
   // console.log(

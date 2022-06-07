@@ -12,10 +12,10 @@ import adaiAbi from "../abis/adai.json";
 import { makeTransferProxyAdminOwnership } from "@openzeppelin/hardhat-upgrades/dist/admin";
 import { CreateTournamentFactory } from "../typechain";
 const ETHERSCAN_TX_URL = "https://kovan.etherscan.io/tx/";
-let ENTRY_FEES: any = Web3.utils.toWei("0.01", "ether");
-let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("0.1", "ether");
-const token = config.mumbaiTest.wmaticToken;
-const aToken = config.mumbaiTest.aWmaticToken;
+let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
+let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
+const token = config.mumbaiTest.daiToken;
+const aToken = config.mumbaiTest.adaiToken;
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
   // line interface.
@@ -67,14 +67,14 @@ async function main() {
   //   console.log("Tournament Factory deployed to:", tournamentFactory.address);
   //console.log("Tr address", tournamentDeployed.address);
 
-  // const tournamentFactory = createTournamentFactory.attach(
-  //   "0xc8869C6Ef8163AbCF178c775D9ad4aA3371B3Bee"
-  // );
-
-  const tournamentFactory = await upgrades.deployProxy(
-    createTournamentFactory,
-    [tournamentDeployed.address]
+  const tournamentFactory = createTournamentFactory.attach(
+    "0xB49225C9A62Dfd05e5E8AaFD5BE25DA58581a965"
   );
+
+  // const tournamentFactory = await upgrades.deployProxy(
+  //   createTournamentFactory,
+  //   [tournamentDeployed.address]
+  // );
   // const tournamentFactory = await createTournamentFactory
   //   .connect(owner)
   //   .deploy(tournamentDeployed.address);
@@ -93,12 +93,12 @@ async function main() {
   //     " getAdminAddress"
   //   );
 
-  // const approveTxn = await daiToken.approve(
-  //   tournamentFactory.address,
-  //   // ethers.utils.parseEther("0.001")
-  //   ethers.BigNumber.from(Web3.utils.toWei("50", "ether")).toString()
-  // );
-  // await approveTxn.wait();
+  const approveTxn = await daiToken.approve(
+    tournamentFactory.address,
+    // ethers.utils.parseEther("0.001")
+    ethers.BigNumber.from(Web3.utils.toWei("50", "ether")).toString()
+  );
+  await approveTxn.wait();
 
   // console.log(
   //   await wethToken.allowance(owner.address, tournamentFactory.address)
@@ -119,21 +119,20 @@ async function main() {
   );
 
   console.log("beacon address ", await tournamentFactory.tournamentBeacon());
-  const options = { value: INITIAL_INVESTED_AMOUNT };
-  // ENTRY_FEES = 0.01 * 10 ** 8;
-  //INITIAL_INVESTED_AMOUNT = 0.1 * 10 ** 8;
+  // const options = { value: INITIAL_INVESTED_AMOUNT };
+  // // ENTRY_FEES = 0.01 * 10 ** 8;
+  // //INITIAL_INVESTED_AMOUNT = 0.1 * 10 ** 8;
   const createPoolTxn = await tournamentFactory
     .connect(owner)
     .createTournamentPool(
       "URI",
-      1651840820,
-      1651841195,
+      1654605574,
+      1654605619,
       ENTRY_FEES,
       token,
       INITIAL_INVESTED_AMOUNT,
       aToken,
-      true,
-      options
+      false
     );
 
   await createPoolTxn.wait();
@@ -159,9 +158,11 @@ async function main() {
   // //   secondOwner.address
   // // );
 
+  const latest = await tournamentFactory.connect(owner).getCount();
+
   const tournamentAddress = await tournamentFactory
     .connect(owner)
-    .tournamentsArray(0);
+    .tournamentsArray((latest as any) - 1);
   console.log("Proxy Tournament Adress-1", tournamentAddress);
 
   // const tournamentAddress2 = await tournamentFactory

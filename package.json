@@ -21,6 +21,7 @@
     "withdrawTournament": "npx hardhat run scripts/withdrawTournament.ts --network matic",
     "withdrawTournament2": "npx hardhat run scripts/withdrawTournament2.ts --network matic",
     "assetBalance": "npx hardhat run scripts/assetBalance.ts --network matic",
+    "debug": "npx hardhat run scripts/debugTournament.ts --network matic",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
     "account": "npx hardhat accounts",

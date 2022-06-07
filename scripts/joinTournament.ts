@@ -3,10 +3,10 @@ import { config } from "../config";
 import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
-const tournamentAddress = "0xDca0ffE9FF4968A614d2C1269B8de448771A5a89";
+const tournamentAddress = "0xE41f86744E2eCcDDa6cA8DEb64B438E7f5530e6E";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
-let ENTRY_FEES: any = Web3.utils.toWei("0.01", "ether");
+let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
 
 async function main() {
   await run("compile");
@@ -14,24 +14,27 @@ async function main() {
   const tournamentFactory = await ethers.getContractFactory("Tournament");
   const tournament = tournamentFactory.attach(tournamentAddress);
 
-  const [owner, secondOwner] = await ethers.getSigners();
-  console.log("Owner", owner.address, secondOwner.address);
-  const daiToken = new ethers.Contract(token, usdcAbi, owner);
+  const signers = await ethers.getSigners();
+  //console.log("Owner", owner.address, secondOwner.address);
   // ENTRY_FEES = 0.01 * 10 ** 8;
 
-  // const approveTxn = await daiToken.approve(
-  //   tournamentAddress,
-  //   // ethers.utils.parseEther("0.001")
-  //   ethers.BigNumber.from(ENTRY_FEES).toString()
-  // );
+  for (let i = 0; i < signers.length; i++) {
+    const daiToken = new ethers.Contract(token, usdcAbi, signers[i]);
 
-  // await approveTxn.wait();
-  const options = { value: ENTRY_FEES };
+    const approveTxn = await daiToken.approve(
+      tournamentAddress,
+      // ethers.utils.parseEther("0.001")
+      ethers.BigNumber.from(ENTRY_FEES).toString()
+    );
 
-  const firstAddressTournamentEntry = await tournament
-    .connect(owner)
-    .joinTournament(options);
-  await firstAddressTournamentEntry.wait();
+    await approveTxn.wait();
+    //const options = { value: ENTRY_FEES };
+
+    const firstAddressTournamentEntry = await tournament
+      .connect(signers[i])
+      .joinTournament();
+    await firstAddressTournamentEntry.wait();
+  }
 
   // const daiToken2 = new ethers.Contract(
   //   config.kovan.daiToken,

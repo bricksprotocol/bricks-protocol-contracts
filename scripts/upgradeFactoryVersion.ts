@@ -16,20 +16,19 @@ let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 async function main() {
-  const proxyAddress = "0x60ad020656bc2B3429e596d7EBE5279d9D675DB8";
-  const tournamentProxyAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
+  const proxyAddress = "0xB49225C9A62Dfd05e5E8AaFD5BE25DA58581a965";
+  //const tournamentProxyAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
   // const tournamentProxyAddress1 = "0x26D2260dc3072F7EE4c29819255BFE08a07D16dc";
-  //const beaconAddress = "0x8D2FCf4eF0D71B20144D4352c53843A11DB9e8a6";
-  const beaconAddress = "0x956Bfaa1441FE6f711f4224A7a84A7A93C44A612";
-  // const FactoryV2 = await ethers.getContractFactory(
-  //   "CreateTournamentFactoryv2"
-  // );
-  // console.log("upgrade to CreateTournamentFactoryv2...");
-  // const factoryV2 = await upgrades.upgradeProxy(proxyAddress, FactoryV2);
-  // console.log(
-  //   factoryV2.address,
-  //   " CreateTournamentFactoryv2 address(should be the same)"
-  // );
+  const beaconAddress = "0x1396E609d276eF06cC262D05103EA92854F637c0";
+  // const beaconAddress = "0x956Bfaa1441FE6f711f4224A7a84A7A93C44A612";
+  const FactoryV2 = await ethers.getContractFactory("CreateTournamentFactory");
+  console.log("upgrade to CreateTournamentFactoryv2...");
+  const factoryV2 = await upgrades.upgradeProxy(proxyAddress, FactoryV2);
+  console.log(
+    factoryV2.address,
+    " CreateTournamentFactoryv2 address(should be the same)"
+  );
+  factoryV2.setProtocolFees(10);
   // console.log("LendingAddress", await factoryV2.lendingPoolAddress());
   // const tx = await factoryV2.upgradeLendingAddress(
   //   "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0"
