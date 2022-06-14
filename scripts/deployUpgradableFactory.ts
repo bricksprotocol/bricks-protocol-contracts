@@ -126,8 +126,8 @@ async function main() {
     .connect(owner)
     .createTournamentPool(
       "URI",
-      1654605574,
-      1654605619,
+      1655078169,
+      1655078524,
       ENTRY_FEES,
       token,
       INITIAL_INVESTED_AMOUNT,

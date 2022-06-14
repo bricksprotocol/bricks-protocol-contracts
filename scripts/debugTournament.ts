@@ -45,7 +45,7 @@ async function main() {
   const tournamentLength: any = await createFactory.getCount();
   const tournamentFactory = await ethers.getContractFactory("Tournament");
   const tournament = tournamentFactory.attach(
-    await createFactory.tournamentsArray(tournamentLength - 1)
+    "0xEF3994C94B7d34b45A79D027268fE9159bCD4575"
   );
   console.log("Total Balance Amount", await tournament.totalBalance());
   console.log(

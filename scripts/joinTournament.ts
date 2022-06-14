@@ -3,7 +3,7 @@ import { config } from "../config";
 import Web3 from "web3";
 import usdcAbi from "../abis/usdc.json";
 
-const tournamentAddress = "0xE41f86744E2eCcDDa6cA8DEb64B438E7f5530e6E";
+const tournamentAddress = "0xE7718026996b1C1D8fdC10236a1a170d9827a96C";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");

@@ -28,7 +28,7 @@ async function main() {
     factoryV2.address,
     " CreateTournamentFactoryv2 address(should be the same)"
   );
-  factoryV2.setProtocolFees(10);
+  // factoryV2.setProtocolFees(10);
   // console.log("LendingAddress", await factoryV2.lendingPoolAddress());
   // const tx = await factoryV2.upgradeLendingAddress(
   //   "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0"

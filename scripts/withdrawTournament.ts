@@ -9,7 +9,7 @@ import Tournament from "../artifacts/contracts/Tournament.sol/Tournament.json";
 import { AbiItem } from "web3-utils";
 
 let ENTRY_FEES: any = Web3.utils.toWei("5", "ether");
-const tournamentAddress = "0xE41f86744E2eCcDDa6cA8DEb64B438E7f5530e6E";
+const tournamentAddress = "0xE7718026996b1C1D8fdC10236a1a170d9827a96C";
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 const privateKey = process.env.PRIVATE_KEY;
@@ -92,7 +92,7 @@ async function main() {
   const tournament = tournamentFactory.attach(tournamentAddress);
 
   const signers = await ethers.getSigners();
-  const messages = [2000, 1200, 3100, 1800, 1900];
+  const messages = [1000, 1200, 1100, 180, 190, 200, 300, 4000, 830, 1000];
   let ownerBalance = 0;
   for (let i = 0; i < signers.length; i++) {
     //console.log("Owner", owner.address, secondOwner.address);

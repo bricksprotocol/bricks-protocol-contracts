@@ -34,7 +34,18 @@ const config: HardhatUserConfig = {
     },
     matic: {
       url: "https://polygon-mumbai.g.alchemy.com/v2/audnHAeVnXRoVIya04iyWWb2b5xjAdH-",
-      accounts: [privateKey!, secondPvtKey!],
+      accounts: [
+        privateKey!,
+        secondPvtKey!,
+        "40bd6f46547ede2780afe0fd97591ee806c55025db8a5e2db0eb9f6501f626b5",
+        "82c4d2bce16bbe6f8147f0e341c4be8fa4f05fe71c5605fe1fffdd51f821279c",
+        "afe19e2287cc5d67726cb615a5af51f7a8d07844503c0e3c00746b7052bdf2bf",
+        "4e0867e2ad957e2c6a05c10c417b4f36d4bdc3940421aeb1f31b689cc3442994",
+        "6b971c13007b23f5b9981545ee232c937eefa0764d6cdb2f517d02bba8b80bd3",
+        "1855ea813e8d10b7850b7076a2e151d0d94334da0f9cb2e4ec7d0723e61d4eac",
+        "f172bc2055f82313f1be8cc395001d675e23e5bf5f04e81181215bb1f03ad66e",
+        "a846d1a808822dde584e2d44c05e16e4a58a1fd9d2b66c827c10248e6ef0a0e3",
+      ],
     },
   },
   solidity: {
