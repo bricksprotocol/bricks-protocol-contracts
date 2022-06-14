@@ -228,6 +228,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
             "Can't verify identity"
         );
         uint256 amountToWithdraw = 0;
+        IERC20 ierc20 = IERC20(aAssetAddress);
 
         if (msg.sender == creator) {
             emit Withdraw(msg.sender, initialVestedAmount);
@@ -249,10 +250,16 @@ contract Tournament is Initializable, OwnableUpgradeable {
 
         //withdrawInitialVestedAmount();
 
+        if (amountToWithdraw > ierc20.balanceOf(address(this))) {
+            amountToWithdraw = ierc20.balanceOf(address(this));
+        }
         totalWithdrawnAmount += amountToWithdraw;
         emit Withdraw(msg.sender, amountToWithdraw);
         emit InitiateWithdraw(msg.sender, amountToWithdraw);
-        withdrawFromAave(amountToWithdraw);
+
+        if (amountToWithdraw > 0) {
+            withdrawFromAave(amountToWithdraw);
+        }
     }
 
     function withdrawProtocolFees() external onlyAdmin {
@@ -289,9 +296,15 @@ contract Tournament is Initializable, OwnableUpgradeable {
             IERC20 ierc20 = IERC20(aAssetAddress);
             uint256 totalParticipantFees = tournamentEntryFees *
                 participants.length;
-            uint256 rewards = (ierc20.balanceOf(address(this)) +
-                totalWithdrawnAmount) -
-                (totalParticipantFees + initialVestedAmount);
+            uint256 rewards = 0;
+            if (
+                (ierc20.balanceOf(address(this)) + totalWithdrawnAmount) >
+                (totalParticipantFees + initialVestedAmount)
+            ) {
+                rewards =
+                    (ierc20.balanceOf(address(this)) + totalWithdrawnAmount) -
+                    (totalParticipantFees + initialVestedAmount);
+            }
             protocolRewards += ((rewardsPercentage * rewards * protocolFees) /
                 10**6);
             amountToWithdraw =

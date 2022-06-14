@@ -71,10 +71,6 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         address aAssetAddress,
         bool isNativeAsset
     ) external payable {
-        require(
-            initialInvestedAmount >= 0 && tournamentEntryFees >= 0,
-            "Either entry fees or initial invested amount is negative"
-        );
         ierc20 = IERC20(asset);
         BeaconProxy tournamentProxy = new BeaconProxy(
             address(tournamentBeacon),
