@@ -161,11 +161,11 @@ contract Tournament is Initializable, OwnableUpgradeable {
             "Participant is already registered"
         );
 
+        emit ParticipantJoined(msg.sender, tournamentEntryFees);
+        participantFees[msg.sender] = true;
+        participants.push(payable(msg.sender));
+        participantWithdrawnStatus[msg.sender] = false;
         if (tournamentEntryFees > 0) {
-            emit ParticipantJoined(msg.sender, tournamentEntryFees);
-            participantFees[msg.sender] = true;
-            participants.push(payable(msg.sender));
-            participantWithdrawnStatus[msg.sender] = false;
             if (isNativeAsset) {
                 WETHGateway gateway = new WETHGateway(asset, address(this));
                 bool authorized = gateway.authorizePool(lendingPoolAddress);
@@ -291,8 +291,8 @@ contract Tournament is Initializable, OwnableUpgradeable {
         public
         returns (uint256)
     {
-        uint256 amountToWithdraw = 0;
-        if (tournamentEntryFees > 0) {
+        uint256 amountToWithdraw = tournamentEntryFees;
+        if (rewardsPercentage > 0) {
             IERC20 ierc20 = IERC20(aAssetAddress);
             uint256 totalParticipantFees = tournamentEntryFees *
                 participants.length;
@@ -307,9 +307,9 @@ contract Tournament is Initializable, OwnableUpgradeable {
             }
             protocolRewards += ((rewardsPercentage * rewards * protocolFees) /
                 10**6);
-            amountToWithdraw =
-                tournamentEntryFees +
-                ((rewardsPercentage * rewards * (100 - protocolFees)) / 10**6);
+            amountToWithdraw += ((rewardsPercentage *
+                rewards *
+                (100 - protocolFees)) / 10**6);
             // totalWithdrawnAmount += amountToWithdraw;
             // emit Withdraw(msg.sender, amountToWithdraw);
             // emit InitiateWithdraw(msg.sender, amountToWithdraw);
