@@ -7,17 +7,17 @@ import "./TournamentBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 contract CreateTournamentFactory is OwnableUpgradeable {
-    BeaconProxy[] public tournamentsArray;
-    mapping(address => bool) tournamentsMapping;
+    BeaconProxy[] private tournamentsArray;
+    mapping(address => bool) private tournamentsMapping;
     event TournamentCreated(address tournamentAddress);
     event ProtocolFeesUpdated(uint256 protocolFees);
-    IERC20 ierc20;
-    address lendingPoolAddressProvider;
-    address public lendingPoolAddress;
-    address dataProvider;
-    uint256 public protocolFees; // 10% - 1000 (support upto 2 decimal places)
+    IERC20 private ierc20;
+    address private lendingPoolAddressProvider;
+    address private lendingPoolAddress;
+    address private dataProvider;
+    uint256 private protocolFees; // 10% - 1000 (support upto 2 decimal places)
     address private implementationContract;
-    TournamentBeacon public tournamentBeacon;
+    TournamentBeacon private tournamentBeacon;
 
     modifier validAddress(address impl) {
         require(impl != address(0), "Address is 0");
@@ -173,7 +173,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         return tournamentBeacon.blueprint();
     }
 
-    function getCount() public view returns (uint256 count) {
+    function getCount() external view returns (uint256 count) {
         return tournamentsArray.length;
     }
 }

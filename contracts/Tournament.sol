@@ -7,10 +7,16 @@ import "./WETHGateway.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./utils/VerifySignature.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-contract Tournament is Initializable, OwnableUpgradeable {
+contract Tournament is
+    Initializable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     event ParticipantJoined(address indexed participant, uint256 entryFees);
     event Withdraw(address indexed participant, uint256 amount);
+    event ProtocolFeesUpdated(uint256 updatedFees);
 
     // custom events for testing
     event InitiateWithdraw(address indexed participant, uint256 amount);
@@ -138,7 +144,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         );
     }
 
-    function joinTournament() external payable {
+    function joinTournament() external payable nonReentrant {
         IERC20 ierc20 = IERC20(asset);
 
         require(
@@ -201,7 +207,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         }
     }
 
-    function withdrawFunds(bytes memory sig) external {
+    function withdrawFunds(bytes memory sig) external nonReentrant {
         require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
 
         //require(isCompleted, "Tournament isn't completed");
@@ -266,6 +272,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
         if (protocolRewards > 0) {
             uint256 amountToWithdraw = protocolRewards;
             protocolRewards = 0;
+            totalWithdrawnAmount += protocolRewards;
             withdrawFromAave(amountToWithdraw);
         }
     }
@@ -288,7 +295,7 @@ contract Tournament is Initializable, OwnableUpgradeable {
     // }
 
     function computeEntryFeesWithRewards(uint256 rewardsPercentage)
-        public
+        private
         returns (uint256)
     {
         uint256 amountToWithdraw = tournamentEntryFees;
@@ -371,5 +378,14 @@ contract Tournament is Initializable, OwnableUpgradeable {
         onlyAdmin
     {
         protocolFees = updatedProtocolFees;
+        emit ProtocolFeesUpdated(updatedProtocolFees);
     }
+
+    function getProtocolRewards() external view onlyAdmin returns (uint256) {
+        return protocolRewards;
+    }
+
+    // function isRegistered() external view returns (bool) {
+    //     return participantFees[msg.sender];
+    // }
 }
