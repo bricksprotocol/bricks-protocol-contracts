@@ -3,7 +3,11 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./WETHGateway.sol";
+//import "./WETHGateway.sol";
+import {IWETHGateway} from "./interfaces/IWethGateway.sol";
+import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
+import {IERC20} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
+import {IAToken} from "@aave/core-v3/contracts/interfaces/IAToken.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./utils/VerifySignature.sol";
@@ -21,7 +25,7 @@ contract Tournament is
     // custom events for testing
     event InitiateWithdraw(address indexed participant, uint256 amount);
 
-    string public tournamentUri;
+    string private tournamentUri;
     uint256 private tournamentStart;
     uint256 private tournamentEnd;
     uint256 private tournamentEntryFees;
@@ -36,13 +40,12 @@ contract Tournament is
     address private aAssetAddress;
     bool private isNativeAsset;
     bool private hasCreatorWithdrawn;
-    bytes32 public constant ADMIN_ROLE = keccak256("MY_ROLE");
     mapping(address => bool) private participantWithdrawnStatus;
     mapping(address => uint256) private participantRewardMapping;
-    bool public isCompleted;
     uint256 private totalPeopleWithdrawn;
     mapping(address => bool) private isRewardMappingSet;
     uint256 private protocolRewards;
+    IWETHGateway private gateway;
 
     modifier validAddresses(address[5] memory pAddresses) {
         for (uint256 i = 0; i < pAddresses.length; i++) {
@@ -105,6 +108,9 @@ contract Tournament is
                 aAsset != address(0),
             "One of the adresses is 0"
         );
+        if (nativeAsset) {
+            gateway = IWETHGateway(0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17);
+        }
         tournamentUri = uri;
         tournamentStart = startTime;
         tournamentEnd = endTime;
@@ -152,14 +158,12 @@ contract Tournament is
             "Tournament has already ended"
         );
 
-        // check if the values match
-        uint256 balance = (isNativeAsset)
-            ? address(msg.sender).balance
-            : ierc20.balanceOf(msg.sender);
-        require(
-            balance >= tournamentEntryFees,
-            "You do not have enough to join address(this) Event"
-        );
+        if (!isNativeAsset) {
+            require(
+                ierc20.balanceOf(msg.sender) >= tournamentEntryFees,
+                "You do not have enough to join address(this) Event"
+            );
+        }
 
         // check if the participant is already registered the event
         require(
@@ -173,15 +177,15 @@ contract Tournament is
         participantWithdrawnStatus[msg.sender] = false;
         if (tournamentEntryFees > 0) {
             if (isNativeAsset) {
-                WETHGateway gateway = new WETHGateway(asset, address(this));
-                bool authorized = gateway.authorizePool(lendingPoolAddress);
-                if (authorized) {
-                    gateway.depositETH{value: msg.value}(
-                        lendingPoolAddress,
-                        address(this),
-                        0
-                    );
-                }
+                //  WETHGateway gateway = new WETHGateway(asset, address(this));
+                // bool authorized = gateway.authorizePool(lendingPoolAddress);
+                // if (authorized) {
+                gateway.depositETH{value: msg.value}(
+                    lendingPoolAddress,
+                    address(this),
+                    0
+                );
+                //  }
             } else {
                 require(
                     ierc20.transferFrom(
@@ -209,8 +213,6 @@ contract Tournament is
 
     function withdrawFunds(bytes memory sig) external nonReentrant {
         require(block.timestamp > tournamentEnd, "Tournament hasn't ended");
-
-        //require(isCompleted, "Tournament isn't completed");
 
         require(
             (msg.sender == creator) ? true : participantFees[msg.sender],
@@ -241,7 +243,6 @@ contract Tournament is
             emit InitiateWithdraw(msg.sender, initialVestedAmount);
             hasCreatorWithdrawn = true;
             amountToWithdraw += initialVestedAmount;
-            totalPeopleWithdrawn += 1;
         }
 
         if (participantFees[msg.sender]) {
@@ -251,10 +252,6 @@ contract Tournament is
             );
             totalPeopleWithdrawn += 1;
         }
-
-        //withdrawEntryFeesWithRewards(participantRewardMapping[msg.sender]);
-
-        //withdrawInitialVestedAmount();
 
         if (amountToWithdraw > ierc20.balanceOf(address(this))) {
             amountToWithdraw = ierc20.balanceOf(address(this));
@@ -279,20 +276,13 @@ contract Tournament is
 
     function withdrawAdminFunds() external onlyAdmin {
         require(
-            totalPeopleWithdrawn >=
-                participants.length + ((initialVestedAmount > 0) ? 1 : 0),
+            totalPeopleWithdrawn == participants.length &&
+                ((initialVestedAmount > 0) ? hasCreatorWithdrawn : true),
             "Everyone hasnt'withdrawn their yield"
         );
         IERC20 ierc20 = IERC20(aAssetAddress);
         withdrawFromAave((ierc20.balanceOf(address(this))));
     }
-
-    // function withdrawInitialVestedAmount() private {
-    //     if (msg.sender == creator && initialVestedAmount > 0) {
-    //         totalWithdrawnAmount += initialVestedAmount;
-    //         withdrawFromAave(initialVestedAmount);
-    //     }
-    // }
 
     function computeEntryFeesWithRewards(uint256 rewardsPercentage)
         private
@@ -317,10 +307,6 @@ contract Tournament is
             amountToWithdraw += ((rewardsPercentage *
                 rewards *
                 (100 - protocolFees)) / 10**6);
-            // totalWithdrawnAmount += amountToWithdraw;
-            // emit Withdraw(msg.sender, amountToWithdraw);
-            // emit InitiateWithdraw(msg.sender, amountToWithdraw);
-            // withdrawFromAave(amountToWithdraw);
         }
 
         return amountToWithdraw;
@@ -329,10 +315,10 @@ contract Tournament is
     function withdrawFromAave(uint256 amountToWithdraw) private {
         if (isNativeAsset) {
             IAToken aWETH = IAToken(aAssetAddress);
-            WETHGateway gateway = new WETHGateway(asset, address(this));
-            bool authorized = gateway.authorizePool(lendingPoolAddress);
+            // WETHGateway gateway = new WETHGateway(asset, address(this));
+            // bool authorized = gateway.authorizePool(lendingPoolAddress);
             bool approved = aWETH.approve(address(gateway), amountToWithdraw);
-            if (approved && authorized) {
+            if (approved) {
                 gateway.withdrawETH(
                     lendingPoolAddress,
                     amountToWithdraw,
@@ -356,20 +342,30 @@ contract Tournament is
         return participantWithdrawnStatus[msg.sender];
     }
 
-    function setCompletionStatus() external onlyAdmin {
-        isCompleted = true;
-    }
-
-    function totalBalance() external view returns (uint256) {
+    function totalBalance() external view onlyAdmin returns (uint256) {
         IERC20 ierc20 = IERC20(aAssetAddress);
         return ierc20.balanceOf(address(this));
     }
 
-    function totalWithdrawnAmountFn() external view returns (uint256) {
+    function maticBalance() external view onlyAdmin returns (uint256) {
+        return address(this).balance;
+    }
+
+    function totalWithdrawnAmountFn()
+        external
+        view
+        onlyAdmin
+        returns (uint256)
+    {
         return totalWithdrawnAmount;
     }
 
-    function participantRewardMappingFn() external view returns (uint256) {
+    function participantRewardMappingFn()
+        external
+        view
+        onlyAdmin
+        returns (uint256)
+    {
         return participantRewardMapping[msg.sender];
     }
 
@@ -385,7 +381,11 @@ contract Tournament is
         return protocolRewards;
     }
 
-    // function isRegistered() external view returns (bool) {
-    //     return participantFees[msg.sender];
-    // }
+    function isRegistered() external view onlyAdmin returns (bool) {
+        return participantFees[msg.sender];
+    }
+
+    fallback() external {
+        revert("Fallback not allowed");
+    }
 }

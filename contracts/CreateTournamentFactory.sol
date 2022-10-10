@@ -4,6 +4,7 @@ import "./Tournament.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
 import "./TournamentBeacon.sol";
+import {IWETHGateway} from "./interfaces/IWethGateway.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 contract CreateTournamentFactory is OwnableUpgradeable {
@@ -52,6 +53,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
     function getLendingPoolAddressProvider()
         external
         view
+        onlyOwner
         returns (
             address,
             address,
@@ -76,10 +78,14 @@ contract CreateTournamentFactory is OwnableUpgradeable {
             address(tournamentBeacon),
             abi.encodeWithSelector(Tournament(address(0)).initialize.selector)
         );
+        emit TournamentCreated(address(tournamentProxy));
         tournamentsArray.push(tournamentProxy);
         tournamentsMapping[address(tournamentProxy)] = true;
-        emit TournamentCreated(address(tournamentProxy));
-        WETHGateway gateway = new WETHGateway(asset, address(this));
+        // WETHGateway gateway = new WETHGateway(asset, address(this));
+        IWETHGateway gateway = IWETHGateway(
+            0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17
+        );
+
         Tournament(address(tournamentProxy)).createPool({
             uri: tournamentUri,
             startTime: tournamentStart,
@@ -96,15 +102,15 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         });
         if (initialInvestedAmount > 0) {
             if (isNativeAsset) {
-                bool approved = gateway.authorizePool(lendingPoolAddress);
+                //bool approved = gateway.authorizePool(lendingPoolAddress);
 
-                if (approved) {
-                    gateway.depositETH{value: msg.value}(
-                        lendingPoolAddress,
-                        address(tournamentProxy),
-                        0
-                    );
-                }
+                //if (approved) {
+                gateway.depositETH{value: msg.value}(
+                    lendingPoolAddress,
+                    address(tournamentProxy),
+                    0
+                );
+                //}
             } else {
                 require(
                     ierc20.transferFrom(
@@ -133,6 +139,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
     function getTournamentDetails(uint256 index)
         external
         view
+        onlyOwner
         returns (
             address,
             string memory,
@@ -151,6 +158,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
     function getTournamentDetailsByAddress(address _tournament)
         external
         view
+        onlyOwner
         returns (
             address,
             string memory,
@@ -169,11 +177,19 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         return Tournament(_tournament).getTournamentDetails();
     }
 
-    function getImplementation() external view returns (address) {
+    function getImplementation() external view onlyOwner returns (address) {
         return tournamentBeacon.blueprint();
     }
 
-    function getCount() external view returns (uint256 count) {
+    function getCount() external view onlyOwner returns (uint256 count) {
         return tournamentsArray.length;
+    }
+
+    receive() external payable {
+        revert("Receive not allowed");
+    }
+
+    fallback() external payable {
+        revert("Fallback not allowed");
     }
 }
