@@ -142,6 +142,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         onlyOwner
         returns (
             address,
+            address,
             string memory,
             uint256,
             uint256,
@@ -161,6 +162,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         onlyOwner
         returns (
             address,
+            address,
             string memory,
             uint256,
             uint256,
@@ -177,12 +179,21 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         return Tournament(_tournament).getTournamentDetails();
     }
 
-    function getImplementation() external view onlyOwner returns (address) {
-        return tournamentBeacon.blueprint();
+    function getLatestTournament() external view returns (BeaconProxy) {
+        return tournamentsArray[tournamentsArray.length - 1];
     }
 
     function getCount() external view onlyOwner returns (uint256 count) {
         return tournamentsArray.length;
+    }
+
+    function getTournamentBeacon()
+        external
+        view
+        onlyOwner
+        returns (TournamentBeacon)
+    {
+        return tournamentBeacon;
     }
 
     receive() external payable {

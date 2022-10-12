@@ -129,6 +129,7 @@ contract Tournament is
         view
         returns (
             address,
+            address,
             string memory,
             uint256,
             uint256,
@@ -139,6 +140,7 @@ contract Tournament is
         )
     {
         return (
+            address(this),
             creator,
             tournamentUri,
             tournamentStart,

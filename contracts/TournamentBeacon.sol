@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
 contract TournamentBeacon is Ownable, IBeacon {
     UpgradeableBeacon beacon;
-    address public blueprint;
+    address private blueprint;
 
     modifier validAddress(address impl) {
         require(impl != address(0), "Not a valid address");
