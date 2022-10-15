@@ -25,7 +25,6 @@ contract Tournament is
     // custom events for testing
     event InitiateWithdraw(address indexed participant, uint256 amount);
 
-    string private tournamentUri;
     uint256 private tournamentStart;
     uint256 private tournamentEnd;
     uint256 private tournamentEntryFees;
@@ -75,7 +74,6 @@ contract Tournament is
     }
 
     function createPool(
-        string memory uri,
         uint256 startTime,
         uint256 endTime,
         uint256 entryFees,
@@ -86,7 +84,8 @@ contract Tournament is
         uint256 fees,
         address sender,
         address aAsset,
-        bool nativeAsset
+        bool nativeAsset,
+        address gatewayAddress
     )
         external
         validAddresses(
@@ -109,9 +108,9 @@ contract Tournament is
             "One of the adresses is 0"
         );
         if (nativeAsset) {
-            gateway = IWETHGateway(0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17);
+            gateway = IWETHGateway(gatewayAddress);
         }
-        tournamentUri = uri;
+
         tournamentStart = startTime;
         tournamentEnd = endTime;
         tournamentEntryFees = entryFees;
@@ -130,7 +129,6 @@ contract Tournament is
         returns (
             address,
             address,
-            string memory,
             uint256,
             uint256,
             uint256,
@@ -142,7 +140,6 @@ contract Tournament is
         return (
             address(this),
             creator,
-            tournamentUri,
             tournamentStart,
             tournamentEnd,
             tournamentEntryFees,

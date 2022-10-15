@@ -19,6 +19,7 @@ contract CreateTournamentFactory is OwnableUpgradeable {
     uint256 private protocolFees; // 10% - 1000 (support upto 2 decimal places)
     address private implementationContract;
     TournamentBeacon private tournamentBeacon;
+    address private wethGatewayAddress;
 
     modifier validAddress(address impl) {
         require(impl != address(0), "Address is 0");
@@ -50,6 +51,14 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         require(dataProvider != address(0), "Data Provider Address is 0");
     }
 
+    function setWethGatewayAddress(address _wethGatewayAddress)
+        external
+        onlyOwner
+        validAddress(_wethGatewayAddress)
+    {
+        wethGatewayAddress = _wethGatewayAddress;
+    }
+
     function getLendingPoolAddressProvider()
         external
         view
@@ -64,7 +73,6 @@ contract CreateTournamentFactory is OwnableUpgradeable {
     }
 
     function createTournamentPool(
-        string memory tournamentUri,
         uint256 tournamentStart,
         uint256 tournamentEnd,
         uint256 tournamentEntryFees,
@@ -82,12 +90,9 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         tournamentsArray.push(tournamentProxy);
         tournamentsMapping[address(tournamentProxy)] = true;
         // WETHGateway gateway = new WETHGateway(asset, address(this));
-        IWETHGateway gateway = IWETHGateway(
-            0x2a58E9bbb5434FdA7FF78051a4B82cb0EF669C17
-        );
+        IWETHGateway gateway = IWETHGateway(wethGatewayAddress);
 
         Tournament(address(tournamentProxy)).createPool({
-            uri: tournamentUri,
             startTime: tournamentStart,
             endTime: tournamentEnd,
             entryFees: tournamentEntryFees,
@@ -98,7 +103,8 @@ contract CreateTournamentFactory is OwnableUpgradeable {
             fees: protocolFees,
             sender: msg.sender,
             aAsset: aAssetAddress,
-            nativeAsset: isNativeAsset
+            nativeAsset: isNativeAsset,
+            gatewayAddress: wethGatewayAddress
         });
         if (initialInvestedAmount > 0) {
             if (isNativeAsset) {
@@ -143,7 +149,6 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         returns (
             address,
             address,
-            string memory,
             uint256,
             uint256,
             uint256,
@@ -163,7 +168,6 @@ contract CreateTournamentFactory is OwnableUpgradeable {
         returns (
             address,
             address,
-            string memory,
             uint256,
             uint256,
             uint256,
