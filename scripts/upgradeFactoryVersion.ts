@@ -16,10 +16,10 @@ let INITIAL_INVESTED_AMOUNT: any = Web3.utils.toWei("50", "ether");
 const token = config.mumbaiTest.daiToken;
 const aToken = config.mumbaiTest.adaiToken;
 async function main() {
-  const proxyAddress = "0xB49225C9A62Dfd05e5E8AaFD5BE25DA58581a965";
+  const proxyAddress = "0xc7F665aa505bC9021D5E482A90F952Cacb1A46f3";
   //const tournamentProxyAddress = "0x09E3823795C50cE47153409d0EeA0f33317b943D";
   // const tournamentProxyAddress1 = "0x26D2260dc3072F7EE4c29819255BFE08a07D16dc";
-  const beaconAddress = "0x1396E609d276eF06cC262D05103EA92854F637c0";
+  const beaconAddress = "0xC0e9a3B61B71868D522a1319a49a358CE5606F82";
   // const beaconAddress = "0x956Bfaa1441FE6f711f4224A7a84A7A93C44A612";
   const FactoryV2 = await ethers.getContractFactory("CreateTournamentFactory");
   console.log("upgrade to CreateTournamentFactoryv2...");
